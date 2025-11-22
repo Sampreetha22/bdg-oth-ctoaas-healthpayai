@@ -15,6 +15,16 @@ const randomElement = <T>(arr: T[]): T => arr[random(0, arr.length - 1)];
 const randomDate = (start: Date, end: Date) =>
   new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 
+// Generate realistic fraud alert status based on audit pipeline workflow
+// ~60% active (not yet investigated), ~25% investigating, ~12% resolved, ~3% dismissed
+const getRandomAlertStatus = (): "active" | "investigating" | "resolved" | "dismissed" => {
+  const rand = Math.random();
+  if (rand < 0.60) return "active";
+  if (rand < 0.85) return "investigating";
+  if (rand < 0.97) return "resolved";
+  return "dismissed";
+};
+
 // Healthcare data
 const specialties = [
   "Behavioral Health",
@@ -263,7 +273,7 @@ function generateFraudAlerts(
               isOperational ? "Single instance, likely technical error" : "Repeated pattern across multiple days",
             ],
           },
-          status: "active",
+          status: getRandomAlertStatus(),
         });
       }
     });
@@ -289,7 +299,7 @@ function generateFraudAlerts(
               `Pattern observed across ${random(5, 15)} similar claims`,
             ],
           },
-          status: "active",
+          status: getRandomAlertStatus(),
         });
       }
     });
@@ -312,7 +322,7 @@ function generateFraudAlerts(
             "Statistical outlier detected",
           ],
         },
-        status: "active",
+        status: getRandomAlertStatus(),
       });
     }
   });
@@ -344,7 +354,7 @@ function generateFraudAlerts(
             "Pattern observed across multiple service dates",
           ],
         },
-        status: "active",
+        status: getRandomAlertStatus(),
       });
     }
     
@@ -368,7 +378,7 @@ function generateFraudAlerts(
             "Repeated pattern across multiple days",
           ],
         },
-        status: "active",
+        status: getRandomAlertStatus(),
       });
     }
     
@@ -392,7 +402,7 @@ function generateFraudAlerts(
             "Possible documentation gap",
           ],
         },
-        status: "active",
+        status: getRandomAlertStatus(),
       });
     }
   }
