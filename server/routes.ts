@@ -264,8 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Benefit Utilization endpoints
   app.get("/api/benefit-utilization/overutilization", async (req, res) => {
     try {
-      const alerts = await storage.getFraudAlerts(1000);
-      const overutilizationAlerts = alerts.filter(a => a.alertType === "overutilization");
+      const overutilizationAlerts = await storage.getFraudAlertsByType("overutilization");
       
       const cases = await Promise.all(
         overutilizationAlerts.slice(0, 50).map(async (alert) => {

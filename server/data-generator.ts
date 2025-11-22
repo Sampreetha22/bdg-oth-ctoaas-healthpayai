@@ -455,6 +455,30 @@ function generateFraudAlerts(
         status: getRandomAlertStatus(),
       });
     }
+    
+    if (Math.random() < 0.025) {
+      // Overutilization without outcome improvement
+      alerts.push({
+        providerId: claim.providerId,
+        memberId: claim.memberId,
+        claimId: claim.id,
+        alertType: "overutilization",
+        riskLevel: random(0, 10) < 7 ? "medium" : "high",
+        riskScore: random(60, 85),
+        pathway: Math.random() < 0.6 ? "operational" : "fraud",
+        aiReasoning: {
+          operationalHypothesis: "Member has treatment-resistant condition requiring extended intervention",
+          fraudHypothesis: "Provider maximizing sessions without regard to clinical necessity or improvement",
+          confidence: 0.72,
+          evidence: [
+            "High session count (20+ sessions) with minimal clinical improvement",
+            "PHQ-9 scores remain elevated or show minimal change",
+            "Sessions continue despite lack of demonstrated progress",
+          ],
+        },
+        status: getRandomAlertStatus(),
+      });
+    }
   }
   
   return alerts;
