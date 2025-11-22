@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EvvStatusIndicator } from "@/components/evv-status-indicator";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
+import { Badge } from "@/components/ui/badge";
 import { MapPin, FileDown, Calendar, ArrowUpDown } from "lucide-react";
 import { formatDate } from "date-fns";
 import { useState, useMemo } from "react";
 import { exportToCSV } from "@/lib/exportUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -23,6 +30,7 @@ type SortDirection = "asc" | "desc";
 
 export default function EvvIntelligence() {
   const [activeTab, setActiveTab] = useState("not-visited");
+  const [selectedCase, setSelectedCase] = useState<any>(null);
   const [sortKey, setSortKey] = useState<SortKey>("riskScore");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [overlapSortKey, setOverlapSortKey] = useState<SortKey>("riskScore");
@@ -313,7 +321,12 @@ export default function EvvIntelligence() {
                     </TableHeader>
                     <TableBody>
                       {sortedCases.map((item: any) => (
-                        <TableRow key={item.id} data-testid={`evv-row-${item.id}`}>
+                        <TableRow 
+                          key={item.id} 
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`evv-row-${item.id}`}
+                        >
                           <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
                           <TableCell>{item.providerName}</TableCell>
                           <TableCell>{item.memberName}</TableCell>
@@ -434,7 +447,12 @@ export default function EvvIntelligence() {
                     </TableHeader>
                     <TableBody>
                       {sortedOverlaps.map((item: any) => (
-                        <TableRow key={item.id} data-testid={`overlap-row-${item.id}`}>
+                        <TableRow 
+                          key={item.id} 
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`overlap-row-${item.id}`}
+                        >
                           <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
                           <TableCell>{item.providerName}</TableCell>
                           <TableCell>{item.memberName}</TableCell>
@@ -552,7 +570,12 @@ export default function EvvIntelligence() {
                     </TableHeader>
                     <TableBody>
                       {sortedMissed.map((item: any) => (
-                        <TableRow key={item.id} data-testid={`missed-row-${item.id}`}>
+                        <TableRow 
+                          key={item.id} 
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`missed-row-${item.id}`}
+                        >
                           <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
                           <TableCell>{item.providerName}</TableCell>
                           <TableCell>{item.memberName}</TableCell>
@@ -576,6 +599,88 @@ export default function EvvIntelligence() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* EVV Details Dialog */}
+      <Dialog open={!!selectedCase} onOpenChange={() => setSelectedCase(null)}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-evv-details">
+          <DialogHeader>
+            <DialogTitle>EVV Claim Details - {selectedCase?.claimId}</DialogTitle>
+          </DialogHeader>
+          {selectedCase && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Provider</p>
+                  <p className="font-semibold" data-testid="text-evv-provider">
+                    {selectedCase.providerName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Member</p>
+                  <p className="font-semibold" data-testid="text-evv-member">
+                    {selectedCase.memberName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Service Date</p>
+                  <p className="font-semibold">
+                    {formatDate(new Date(selectedCase.serviceDate), "MMMM d, yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Distance from Location</p>
+                  <p className="font-mono font-semibold text-lg">
+                    {selectedCase.distance > 0 ? `${selectedCase.distance} mi` : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">EVV Analysis</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">EVV Status</p>
+                      <div className="mt-2">
+                        <EvvStatusIndicator status={selectedCase.evvStatus} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Risk Score</p>
+                      <div className="mt-2">
+                        <RiskScoreBadge score={selectedCase.riskScore} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">AI Analysis Pathway</h3>
+                <div className="p-3 rounded-md bg-muted">
+                  <Badge variant={selectedCase.pathway === "fraud" ? "destructive" : "secondary"}>
+                    {selectedCase.pathway}
+                  </Badge>
+                </div>
+              </div>
+
+              {selectedCase.gpsCoordinates && (
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-2">GPS Information</h3>
+                  <div className="text-sm space-y-1">
+                    <p className="font-mono">{selectedCase.gpsCoordinates}</p>
+                    <p className="text-muted-foreground">
+                      Verified against member address
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,6 +7,12 @@ import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { Activity, FileDown, TrendingDown, ArrowUpDown } from "lucide-react";
 import { exportToCSV } from "@/lib/exportUtils";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -30,6 +36,7 @@ type SortKey = "memberName" | "providerName" | "sessionCount" | "initialPhq9" | 
 type SortDirection = "asc" | "desc";
 
 export default function BenefitUtilization() {
+  const [selectedCase, setSelectedCase] = useState<any>(null);
   const { data: overutilization, isLoading } = useQuery({
     queryKey: ["/api/benefit-utilization/overutilization"],
   });
@@ -258,6 +265,7 @@ export default function BenefitUtilization() {
                     <TableRow 
                       key={item.id} 
                       className="hover-elevate cursor-pointer"
+                      onClick={() => setSelectedCase(item)}
                       data-testid={`utilization-row-${item.id}`}
                     >
                       <TableCell>{item.memberName}</TableCell>
@@ -291,6 +299,100 @@ export default function BenefitUtilization() {
           )}
         </CardContent>
       </Card>
+
+      {/* Utilization Details Dialog */}
+      <Dialog open={!!selectedCase} onOpenChange={() => setSelectedCase(null)}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-utilization-details">
+          <DialogHeader>
+            <DialogTitle>Utilization & Outcome Analysis</DialogTitle>
+          </DialogHeader>
+          {selectedCase && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Member</p>
+                  <p className="font-semibold" data-testid="text-util-member">
+                    {selectedCase.memberName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Provider</p>
+                  <p className="font-semibold" data-testid="text-util-provider">
+                    {selectedCase.providerName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Sessions</p>
+                  <p className="font-mono font-semibold text-lg">
+                    {selectedCase.sessionCount}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Risk Score</p>
+                  <div className="mt-1">
+                    <RiskScoreBadge score={selectedCase.riskScore} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">Clinical Outcome Tracking (PHQ-9)</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Initial Score</p>
+                      <p className="font-mono font-semibold text-2xl mt-2">
+                        {selectedCase.initialPhq9}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Current Score</p>
+                      <p className="font-mono font-semibold text-2xl mt-2">
+                        {selectedCase.currentPhq9}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Change</p>
+                      <p className={cn(
+                        "font-mono font-semibold text-2xl mt-2",
+                        selectedCase.change > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+                      )}>
+                        {selectedCase.change > 0 ? "+" : ""}{selectedCase.change}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {selectedCase.change > 0 ? "Worsening" : "Improving"}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">AI Analysis</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Analysis Pathway</p>
+                    <Badge className="mt-1" variant={selectedCase.pathway === "fraud" ? "destructive" : "secondary"}>
+                      {selectedCase.pathway}
+                    </Badge>
+                  </div>
+                  <div className="p-3 rounded-md bg-muted text-sm">
+                    <p className="font-medium mb-1">Flagged For:</p>
+                    <p className="text-muted-foreground">
+                      High session volume ({selectedCase.sessionCount} sessions) with minimal or negative clinical outcome change. 
+                      Requires review to determine if services are medically necessary and effective.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
