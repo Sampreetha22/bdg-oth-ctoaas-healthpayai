@@ -286,9 +286,40 @@ export default function EvvIntelligence() {
               {overlapLoading ? (
                 <Skeleton className="h-64" />
               ) : (
-                <p className="text-center text-muted-foreground py-12">
-                  {overlaps?.cases?.length || 0} overlapping claims detected
-                </p>
+                <div className="max-h-[500px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead>Claim ID</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Service Date</TableHead>
+                        <TableHead>EVV Status</TableHead>
+                        <TableHead>Risk</TableHead>
+                        <TableHead>Pathway</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {overlaps?.cases?.map((item: any) => (
+                        <TableRow key={item.id} data-testid={`overlap-row-${item.id}`}>
+                          <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
+                          <TableCell>{item.providerName}</TableCell>
+                          <TableCell>{item.memberName}</TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <EvvStatusIndicator status={item.evvStatus} />
+                          </TableCell>
+                          <TableCell>
+                            <RiskScoreBadge score={item.riskScore} size="sm" />
+                          </TableCell>
+                          <TableCell className="text-sm">{item.pathway}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -303,9 +334,40 @@ export default function EvvIntelligence() {
               {missedLoading ? (
                 <Skeleton className="h-64" />
               ) : (
-                <p className="text-center text-muted-foreground py-12">
-                  {missed?.cases?.length || 0} claims for missed visits without incident reports
-                </p>
+                <div className="max-h-[500px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead>Claim ID</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Service Date</TableHead>
+                        <TableHead>EVV Status</TableHead>
+                        <TableHead>Risk</TableHead>
+                        <TableHead>Pathway</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {missed?.cases?.map((item: any) => (
+                        <TableRow key={item.id} data-testid={`missed-row-${item.id}`}>
+                          <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
+                          <TableCell>{item.providerName}</TableCell>
+                          <TableCell>{item.memberName}</TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <EvvStatusIndicator status={item.evvStatus} />
+                          </TableCell>
+                          <TableCell>
+                            <RiskScoreBadge score={item.riskScore} size="sm" />
+                          </TableCell>
+                          <TableCell className="text-sm">{item.pathway}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

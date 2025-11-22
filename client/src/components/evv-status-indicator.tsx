@@ -1,8 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EvvStatusIndicatorProps {
-  status: "verified" | "missing" | "mismatch";
+  status: "verified" | "missing" | "mismatch" | "overlap" | "missed";
   label?: string;
   className?: string;
 }
@@ -23,6 +23,16 @@ export function EvvStatusIndicator({ status, label, className }: EvvStatusIndica
       icon: XCircle,
       color: "text-red-600 dark:text-red-400",
       label: label || "Mismatch",
+    },
+    overlap: {
+      icon: Calendar,
+      color: "text-orange-600 dark:text-orange-400",
+      label: label || "Overlap",
+    },
+    missed: {
+      icon: XCircle,
+      color: "text-red-600 dark:text-red-400",
+      label: label || "Missed",
     },
   };
 

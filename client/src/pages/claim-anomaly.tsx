@@ -172,24 +172,93 @@ export default function ClaimAnomaly() {
         </TabsContent>
 
         <TabsContent value="underbilling" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Detected Leakage</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-mono font-semibold">
+                  ${(underbilling?.totalLeakage || 0).toLocaleString()}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Revenue opportunity identified
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Claims</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-mono font-semibold">
+                  {underbilling?.totalCount || 0}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">Under AI review</p>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Underbilling & Revenue Leakage</CardTitle>
+              <CardTitle>Detected Claims</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {underLoading ? (
-                <Skeleton className="h-64" />
+                <div className="p-6">
+                  <Skeleton className="h-64" />
+                </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-md">
-                    <p className="text-sm text-muted-foreground mb-2">Detected Leakage</p>
-                    <p className="text-2xl font-mono font-semibold">
-                      ${(underbilling?.totalLeakage || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <p className="text-center text-muted-foreground py-12">
-                    {underbilling?.cases?.length || 0} claims detected
-                  </p>
+                <div className="max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead>Claim ID</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Service Date</TableHead>
+                        <TableHead>CPT Code</TableHead>
+                        <TableHead>Billed</TableHead>
+                        <TableHead>Expected</TableHead>
+                        <TableHead>Risk</TableHead>
+                        <TableHead>Pathway</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {underbilling?.cases?.map((item: any) => (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`underbilling-row-${item.id}`}
+                        >
+                          <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
+                          <TableCell>{item.providerName}</TableCell>
+                          <TableCell>{item.memberName}</TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <CptCodePill code={item.cptCode} modifiers={item.modifiers} />
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            ${Number(item.amount).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="font-mono text-green-600 dark:text-green-400">
+                            ${Number(item.expectedAmount).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <RiskScoreBadge score={item.riskScore} size="sm" />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
+                              {item.pathway}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>
@@ -197,24 +266,93 @@ export default function ClaimAnomaly() {
         </TabsContent>
 
         <TabsContent value="upcoding" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Potential Overpayment</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-mono font-semibold">
+                  ${(upcoding?.totalOverpayment || 0).toLocaleString()}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Recovery opportunity identified
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Claims</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-mono font-semibold">
+                  {upcoding?.totalCount || 0}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">Under AI review</p>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Upcoding & Misclassification</CardTitle>
+              <CardTitle>Detected Claims</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {upLoading ? (
-                <Skeleton className="h-64" />
+                <div className="p-6">
+                  <Skeleton className="h-64" />
+                </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-md">
-                    <p className="text-sm text-muted-foreground mb-2">Potential Overpayment</p>
-                    <p className="text-2xl font-mono font-semibold">
-                      ${(upcoding?.totalOverpayment || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <p className="text-center text-muted-foreground py-12">
-                    {upcoding?.cases?.length || 0} claims under AI review
-                  </p>
+                <div className="max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead>Claim ID</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Service Date</TableHead>
+                        <TableHead>Billed Code</TableHead>
+                        <TableHead>Expected Code</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Risk</TableHead>
+                        <TableHead>Pathway</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {upcoding?.cases?.map((item: any) => (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`upcoding-row-${item.id}`}
+                        >
+                          <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
+                          <TableCell>{item.providerName}</TableCell>
+                          <TableCell>{item.memberName}</TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <CptCodePill code={item.cptCode} modifiers={item.modifiers} />
+                          </TableCell>
+                          <TableCell>
+                            <CptCodePill code={item.expectedCode} modifiers={[]} />
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            ${Number(item.amount).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <RiskScoreBadge score={item.riskScore} size="sm" />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
+                              {item.pathway}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </CardContent>

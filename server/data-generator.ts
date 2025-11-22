@@ -304,6 +304,32 @@ function generateFraudAlerts(
       }
     });
     
+    // Detect underbilling (revenue leakage - 2% of claims)
+    providerClaims.forEach(claim => {
+      if (Math.random() < 0.02 && claim.documentedDuration && claim.sessionDuration < claim.documentedDuration * 0.7) {
+        alerts.push({
+          providerId,
+          memberId: claim.memberId,
+          claimId: claim.id,
+          alertType: "underbilling",
+          riskLevel: "low",
+          riskScore: random(40, 60),
+          pathway: "operational",
+          aiReasoning: {
+            operationalHypothesis: "Billing system defaulting to lower CPT code tier",
+            fraudHypothesis: "Revenue leakage opportunity - provider eligible for higher reimbursement",
+            confidence: 0.75,
+            evidence: [
+              `Documented duration: ${claim.documentedDuration} min`,
+              `Billed CPT: ${claim.cptCode}`,
+              `Could bill for ${claim.documentedDuration >= 53 ? "90837" : "90834"} instead`,
+            ],
+          },
+          status: getRandomAlertStatus(),
+        });
+      }
+    });
+    
     // Detect billing intensity outliers (top ~10% of providers by volume)
     if (providerClaims.length > 110 && Math.random() < 0.5) {
       alerts.push({
