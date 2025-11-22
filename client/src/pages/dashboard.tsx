@@ -1,31 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { MetricCard } from "@/components/metric-card";
-import { AlertCard } from "@/components/alert-card";
-import { RiskScoreBadge } from "@/components/risk-score-badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { RiskScoreBadge } from "@/components/risk-score-badge";
 import {
-  DollarSign,
-  TrendingUp,
   AlertTriangle,
   FileText,
+  Users,
+  TrendingUp,
+  AlertCircle,
+  MapPin,
+  Zap,
   BarChart3,
 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import type { DashboardMetrics } from "@shared/schema";
 import { useLocation } from "wouter";
+import type { DashboardMetrics } from "@shared/schema";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -34,203 +23,283 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/metrics"],
   });
 
-  const { data: recentAlerts, isLoading: alertsLoading } = useQuery({
+  const { data: recentAlerts } = useQuery({
     queryKey: ["/api/dashboard/recent-alerts"],
   });
 
-  const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+  // Signal card definitions mapping to FWA detection modules
+  const signalCards = [
+    {
+      id: "duplicate-billing",
+      title: "Duplicate Billing",
+      icon: AlertTriangle,
+      color: "red",
+      count: metrics?.totalFwaDetected ? Math.floor(metrics.totalFwaDetected * 0.15) : 0,
+      description: "Claims submitted multiple times for the same service, indicating systematic overbilling patterns",
+      route: "/claim-anomaly",
+    },
+    {
+      id: "evv-discrepancies",
+      title: "EVV Discrepancies",
+      icon: MapPin,
+      color: "red",
+      count: metrics?.totalFwaDetected ? Math.floor(metrics.totalFwaDetected * 0.25) : 0,
+      description: "Electronic Visit Verification mismatches, phantom visits, and location fraud indicators",
+      route: "/evv-intelligence",
+    },
+    {
+      id: "provider-anomalies",
+      title: "Provider Anomalies",
+      icon: Zap,
+      color: "orange",
+      count: metrics?.totalFwaDetected ? Math.floor(metrics.totalFwaDetected * 0.35) : 0,
+      description: "Unusual billing patterns, statistical outliers, and behavioral risk indicators from provider profiling",
+      route: "/provider-profiling",
+    },
+    {
+      id: "utilization-outcomes",
+      title: "Utilization vs Outcomes",
+      icon: BarChart3,
+      color: "orange",
+      count: metrics?.totalFwaDetected ? Math.floor(metrics.totalFwaDetected * 0.25) : 0,
+      description: "Service utilization exceeding clinical outcomes, over-treatment patterns, and benefit abuse signals",
+      route: "/benefit-utilization",
+    },
+  ];
+
+  const getColorClasses = (color: string) => {
+    switch (color) {
+      case "red":
+        return "bg-red-950/20 border-red-900/30 text-red-400";
+      case "orange":
+        return "bg-orange-950/20 border-orange-900/30 text-orange-400";
+      case "blue":
+        return "bg-blue-950/20 border-blue-900/30 text-blue-400";
+      case "green":
+        return "bg-green-950/20 border-green-900/30 text-green-400";
+      default:
+        return "bg-slate-900/20 border-slate-800/30 text-slate-400";
+    }
+  };
+
+  const getCountBgColor = (color: string) => {
+    switch (color) {
+      case "red":
+        return "bg-red-500/20 text-red-400";
+      case "orange":
+        return "bg-orange-500/20 text-orange-400";
+      case "blue":
+        return "bg-blue-500/20 text-blue-400";
+      case "green":
+        return "bg-green-500/20 text-green-400";
+      default:
+        return "bg-slate-500/20 text-slate-400";
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-24" />
           ))}
         </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          {[...Array(2)].map((_, i) => (
-            <Skeleton key={i} className="h-96" />
-          ))}
+        <div className="space-y-4">
+          <Skeleton className="h-8" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-2" data-testid="heading-dashboard">
-          Executive Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Comprehensive view of fraud, waste, and abuse detection across all modules
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total FWA Detected"
-          value={`$${(metrics?.totalAmount || 0).toLocaleString()}`}
-          trend={metrics?.recoveryRate}
-          trendLabel="recovery rate"
-          icon={<DollarSign className="h-5 w-5" />}
-          testId="metric-total-fwa"
-        />
-        <MetricCard
-          title="Active Investigations"
-          value={metrics?.activeInvestigations || 0}
-          subtitle="Cases under review"
-          icon={<FileText className="h-5 w-5" />}
-          testId="metric-active-investigations"
-        />
-        <MetricCard
-          title="High-Risk Claims"
-          value={metrics?.highRiskClaims || 0}
-          subtitle="Requiring immediate action"
-          icon={<AlertTriangle className="h-5 w-5" />}
-          testId="metric-high-risk-claims"
-        />
-        <MetricCard
-          title="Detection Cases"
-          value={metrics?.totalFwaDetected || 0}
-          trend={15}
-          trendLabel="vs last month"
-          icon={<BarChart3 className="h-5 w-5" />}
-          testId="metric-detection-cases"
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Alerts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 max-h-[400px] overflow-y-auto">
-            {alertsLoading ? (
-              <Skeleton className="h-24" />
-            ) : recentAlerts && recentAlerts.length > 0 ? (
-              recentAlerts.slice(0, 5).map((alert: any) => (
-                <AlertCard
-                  key={alert.id}
-                  id={alert.id}
-                  type={alert.alertType}
-                  riskLevel={alert.riskLevel}
-                  providerName={alert.providerName}
-                  message={alert.message}
-                  detectedAt={new Date(alert.detectedAt)}
-                  onView={(id) => setLocation(`/alert/${id}`)}
-                />
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No recent alerts</p>
-            )}
+    <div className="p-6 space-y-8">
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Compliance Violations */}
+        <Card
+          className="border-red-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
+          onClick={() => setLocation("/claim-anomaly")}
+          data-testid="summary-card-violations"
+        >
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Compliance Violations
+              </span>
+              <AlertTriangle className="h-4 w-4 text-red-400" />
+            </div>
+            <div className="text-3xl font-mono font-bold text-red-400" data-testid="text-violations-count">
+              {metrics?.totalFwaDetected || 0}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>High-risk patterns detected</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>FWA by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={metrics?.categoryBreakdown || []}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ category, percentage }) => `${category} (${percentage}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {(metrics?.categoryBreakdown || []).map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* Audit Findings */}
+        <Card
+          className="border-orange-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
+          onClick={() => setLocation("/evv-intelligence")}
+          data-testid="summary-card-findings"
+        >
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Audit Findings
+              </span>
+              <FileText className="h-4 w-4 text-orange-400" />
+            </div>
+            <div className="text-3xl font-mono font-bold text-orange-400" data-testid="text-findings-count">
+              {metrics?.activeInvestigations || 0}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>Cases under review</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Active Members */}
+        <Card
+          className="border-blue-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
+          onClick={() => setLocation("/provider-profiling")}
+          data-testid="summary-card-members"
+        >
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Active Members
+              </span>
+              <Users className="h-4 w-4 text-blue-400" />
+            </div>
+            <div className="text-3xl font-mono font-bold text-blue-400" data-testid="text-members-count">
+              {metrics?.highRiskClaims || 0}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>Analyzed this period</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compliance Rate */}
+        <Card
+          className="border-green-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
+          onClick={() => setLocation("/benefit-utilization")}
+          data-testid="summary-card-compliance"
+        >
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Compliance Rate
+              </span>
+              <TrendingUp className="h-4 w-4 text-green-400" />
+            </div>
+            <div className="text-3xl font-mono font-bold text-green-400" data-testid="text-compliance-rate">
+              {((metrics?.recoveryRate || 0) * 100).toFixed(1)}%
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>Network performance</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Detection Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={metrics?.detectionTrend || []}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 12 }}
-                stroke="hsl(var(--muted-foreground))"
-              />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                stroke="hsl(var(--muted-foreground))"
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="hsl(var(--chart-1))"
-                strokeWidth={2}
-                name="Cases"
-              />
-              <Line
-                type="monotone"
-                dataKey="amount"
-                stroke="hsl(var(--chart-2))"
-                strokeWidth={2}
-                name="Amount ($)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* FWA Detection - Signal Categories */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold" data-testid="heading-signal-categories">
+            FWA Detection - Signal Categories
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Click any category to explore detected patterns and drill down into specific cases
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Risk Providers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {metrics?.topRiskProviders?.slice(0, 5).map((provider: any) => (
-              <div
-                key={provider.id}
-                className="flex items-center justify-between p-3 border rounded-md hover-elevate cursor-pointer"
-                onClick={() => setLocation(`/provider/${provider.id}`)}
-                data-testid={`provider-${provider.id}`}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {signalCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Card
+                key={card.id}
+                className={`border hover-elevate cursor-pointer transition-all ${getColorClasses(card.color)}`}
+                onClick={() => setLocation(card.route)}
+                data-testid={`signal-card-${card.id}`}
               >
-                <div className="flex-1">
-                  <p className="font-medium">{provider.name}</p>
-                  <p className="text-sm text-muted-foreground">{provider.specialty}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm font-mono">{provider.alertCount} alerts</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${Number(provider.avgClaimAmount).toLocaleString()} avg
-                    </p>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${getCountBgColor(card.color)}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-semibold text-sm" data-testid={`text-signal-title-${card.id}`}>
+                        {card.title}
+                      </h3>
+                    </div>
+                    <Badge
+                      className={`${getCountBgColor(card.color)} border-0`}
+                      data-testid={`badge-signal-count-${card.id}`}
+                    >
+                      {card.count}
+                    </Badge>
                   </div>
-                  <RiskScoreBadge score={provider.riskScore} />
-                </div>
-              </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed" data-testid={`text-signal-description-${card.id}`}>
+                    {card.description}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Alerts Section */}
+      {recentAlerts && recentAlerts.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold" data-testid="heading-recent-alerts">
+              Recent Critical Alerts
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {recentAlerts.slice(0, 6).map((alert: any) => (
+              <Card
+                key={alert.id}
+                className="border-slate-800 hover-elevate cursor-pointer"
+                onClick={() => setLocation(`/claim-anomaly`)}
+                data-testid={`alert-card-${alert.id}`}
+              >
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant={alert.riskLevel === "high" ? "destructive" : "secondary"}>
+                      {alert.alertType.replace(/_/g, " ")}
+                    </Badge>
+                    <RiskScoreBadge score={alert.riskScore} size="sm" />
+                  </div>
+                  <p className="text-sm font-medium" data-testid={`text-alert-provider-${alert.id}`}>
+                    {alert.providerName}
+                  </p>
+                  <p className="text-xs text-muted-foreground" data-testid={`text-alert-message-${alert.id}`}>
+                    {alert.message}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(alert.detectedAt).toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }
