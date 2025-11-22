@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
-import { Activity, FileDown, TrendingDown } from "lucide-react";
+import { Activity, FileDown, TrendingDown, ArrowUpDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,11 +23,50 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { useState, useMemo } from "react";
+
+type SortKey = "memberName" | "providerName" | "sessionCount" | "initialPhq9" | "currentPhq9" | "change" | "riskScore" | "pathway";
+type SortDirection = "asc" | "desc";
 
 export default function BenefitUtilization() {
   const { data: overutilization, isLoading } = useQuery({
     queryKey: ["/api/benefit-utilization/overutilization"],
   });
+  
+  const [sortKey, setSortKey] = useState<SortKey>("riskScore");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("desc");
+    }
+  };
+
+  const sortedCases = useMemo(() => {
+    if (!overutilization?.cases) return [];
+    
+    const sorted = [...overutilization.cases].sort((a: any, b: any) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+      
+      // Numeric comparison
+      if (sortDirection === "asc") {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+    
+    return sorted;
+  }, [overutilization?.cases, sortKey, sortDirection]);
 
   return (
     <div className="p-6 space-y-6">
@@ -93,49 +132,143 @@ export default function BenefitUtilization() {
           {isLoading ? (
             <Skeleton className="h-96" />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Session Count</TableHead>
-                  <TableHead>Initial PHQ-9</TableHead>
-                  <TableHead>Current PHQ-9</TableHead>
-                  <TableHead>Change</TableHead>
-                  <TableHead>Risk</TableHead>
-                  <TableHead>Pathway</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {overutilization?.cases?.map((item: any) => (
-                  <TableRow key={item.id} data-testid={`utilization-row-${item.id}`}>
-                    <TableCell>{item.memberName}</TableCell>
-                    <TableCell>{item.providerName}</TableCell>
-                    <TableCell className="font-mono">{item.sessionCount}</TableCell>
-                    <TableCell className="font-mono">{item.initialPhq9}</TableCell>
-                    <TableCell className="font-mono">{item.currentPhq9}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className={cn(
-                          "font-mono text-sm",
-                          item.change > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
-                        )}>
-                          {item.change > 0 ? "+" : ""}{item.change}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <RiskScoreBadge score={item.riskScore} size="sm" />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
-                        {item.pathway}
-                      </Badge>
-                    </TableCell>
+            <div className="max-h-[500px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-card z-10">
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("memberName")}
+                        data-testid="sort-member"
+                      >
+                        Member
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("providerName")}
+                        data-testid="sort-provider"
+                      >
+                        Provider
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("sessionCount")}
+                        data-testid="sort-sessions"
+                      >
+                        Session Count
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("initialPhq9")}
+                        data-testid="sort-initial-phq9"
+                      >
+                        Initial PHQ-9
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("currentPhq9")}
+                        data-testid="sort-current-phq9"
+                      >
+                        Current PHQ-9
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("change")}
+                        data-testid="sort-change"
+                      >
+                        Change
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("riskScore")}
+                        data-testid="sort-risk"
+                      >
+                        Risk
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("pathway")}
+                        data-testid="sort-pathway"
+                      >
+                        Pathway
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedCases.map((item: any) => (
+                    <TableRow 
+                      key={item.id} 
+                      className="hover-elevate cursor-pointer"
+                      data-testid={`utilization-row-${item.id}`}
+                    >
+                      <TableCell>{item.memberName}</TableCell>
+                      <TableCell>{item.providerName}</TableCell>
+                      <TableCell className="font-mono">{item.sessionCount}</TableCell>
+                      <TableCell className="font-mono">{item.initialPhq9}</TableCell>
+                      <TableCell className="font-mono">{item.currentPhq9}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className={cn(
+                            "font-mono text-sm",
+                            item.change > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
+                          )}>
+                            {item.change > 0 ? "+" : ""}{item.change}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <RiskScoreBadge score={item.riskScore} size="sm" />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
+                          {item.pathway}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
