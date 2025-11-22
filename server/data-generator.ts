@@ -111,6 +111,7 @@ function generateClaims(
   const claims: InsertClaim[] = [];
   const evvRecords: InsertEvvRecord[] = [];
   const clinicalOutcomes: InsertClinicalOutcome[] = [];
+  let lastClaim: InsertClaim | null = null;
   
   for (let i = 0; i < count; i++) {
     const provider = randomElement(providers);
@@ -122,8 +123,8 @@ function generateClaims(
     const isHighRisk = provider.riskScore > 70;
     const isFraud = isHighRisk && Math.random() < 0.3;
     
-    // Duplicate billing pattern
-    const isDuplicate = isFraud && Math.random() < 0.2;
+    // Duplicate billing pattern - actually create duplicates
+    const isDuplicate = isFraud && lastClaim && Math.random() < 0.15;
     
     // Upcoding pattern
     const isUpcoded = isFraud && Math.random() < 0.25;
@@ -135,26 +136,38 @@ function generateClaims(
       serviceDate.setDate(serviceDate.getDate() + (6 - serviceDate.getDay()));
     }
     
-    const claim: InsertClaim = {
-      claimId: `CLM-2024-${String(100000 + i).padStart(6, '0')}`,
-      providerId: provider.id,
-      memberId: member.id,
-      serviceDate,
-      submittedDate,
-      cptCode: cpt.code,
-      cptDescription: cpt.description,
-      modifiers: Math.random() < 0.3 ? [randomElement(modifiers)] : [],
-      billedAmount: String(cpt.avgCost + random(-20, 20)),
-      authorizedUnits: 1,
-      billedUnits: 1,
-      sessionDuration: cpt.duration,
-      documentedDuration: actualDuration,
-      caseNotes: `Session conducted with member. ${isUpcoded ? "Brief session." : "Standard therapy session."}`,
-      approved: !isFraud || Math.random() < 0.5,
-      paidAmount: !isFraud ? String(cpt.avgCost) : null,
-    };
+    // Create duplicate claim if needed
+    let claim: InsertClaim;
+    if (isDuplicate && lastClaim) {
+      // Create a duplicate of the last claim with a new claim ID
+      claim = {
+        ...lastClaim,
+        claimId: `CLM-2024-${String(100000 + i).padStart(6, '0')}`,
+        submittedDate: new Date(lastClaim.submittedDate.getTime() + random(1, 3) * 86400000),
+      };
+    } else {
+      claim = {
+        claimId: `CLM-2024-${String(100000 + i).padStart(6, '0')}`,
+        providerId: provider.id,
+        memberId: member.id,
+        serviceDate,
+        submittedDate,
+        cptCode: cpt.code,
+        cptDescription: cpt.description,
+        modifiers: Math.random() < 0.3 ? [randomElement(modifiers)] : [],
+        billedAmount: String(cpt.avgCost + random(-20, 20)),
+        authorizedUnits: 1,
+        billedUnits: 1,
+        sessionDuration: cpt.duration,
+        documentedDuration: actualDuration,
+        caseNotes: `Session conducted with member. ${isUpcoded ? "Brief session." : "Standard therapy session."}`,
+        approved: !isFraud || Math.random() < 0.5,
+        paidAmount: !isFraud ? String(cpt.avgCost) : null,
+      };
+    }
     
     claims.push(claim);
+    lastClaim = claim;
     
     // Generate EVV record
     if (cpt.code === "G0151" || Math.random() < 0.5) {
@@ -303,6 +316,86 @@ function generateFraudAlerts(
       });
     }
   });
+  
+  // Generate EVV-related fraud alerts
+  // Sample 10% of claims to check for EVV issues
+  const sampleSize = Math.floor(claims.length * 0.1);
+  for (let i = 0; i < sampleSize; i++) {
+    const claim = claims[random(0, claims.length - 1)];
+    
+    // Randomly generate EVV fraud patterns
+    if (Math.random() < 0.05) {
+      // Billed but not visited
+      alerts.push({
+        providerId: claim.providerId,
+        memberId: claim.memberId,
+        claimId: claim.id,
+        alertType: "billed_not_visited",
+        riskLevel: Math.random() < 0.6 ? "high" : "critical",
+        riskScore: random(70, 95),
+        pathway: Math.random() < 0.4 ? "operational" : "fraud",
+        aiReasoning: {
+          operationalHypothesis: "EVV device malfunction or connectivity issue prevented GPS logging",
+          fraudHypothesis: "Service billed without corresponding EVV verification, systematic pattern detected",
+          confidence: 0.82,
+          evidence: [
+            "No EVV check-in/check-out recorded",
+            "GPS coordinates missing or failed validation",
+            "Pattern observed across multiple service dates",
+          ],
+        },
+        status: "active",
+      });
+    }
+    
+    if (Math.random() < 0.03) {
+      // Service overlap
+      alerts.push({
+        providerId: claim.providerId,
+        memberId: claim.memberId,
+        claimId: claim.id,
+        alertType: "service_overlap",
+        riskLevel: "high",
+        riskScore: random(75, 88),
+        pathway: "fraud",
+        aiReasoning: {
+          operationalHypothesis: "Scheduling error or data entry mistake in billing system",
+          fraudHypothesis: "Provider claiming simultaneous services for multiple members - physically impossible",
+          confidence: 0.91,
+          evidence: [
+            "Multiple overlapping service times detected",
+            "Provider cannot be in two locations simultaneously",
+            "Repeated pattern across multiple days",
+          ],
+        },
+        status: "active",
+      });
+    }
+    
+    if (Math.random() < 0.04) {
+      // Missed visit
+      alerts.push({
+        providerId: claim.providerId,
+        memberId: claim.memberId,
+        claimId: claim.id,
+        alertType: "missed_visit",
+        riskLevel: "medium",
+        riskScore: random(55, 70),
+        pathway: "operational",
+        aiReasoning: {
+          operationalHypothesis: "Legitimate cancellation not properly documented in billing system",
+          fraudHypothesis: "Pattern of billing for scheduled-but-not-rendered services",
+          confidence: 0.68,
+          evidence: [
+            "No EVV check-in recorded for scheduled service",
+            "Member did not acknowledge service receipt",
+            "Possible documentation gap",
+          ],
+        },
+        status: "active",
+      });
+    }
+  }
   
   return alerts;
 }
