@@ -228,10 +228,40 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {signalCards.map((card) => {
             const Icon = card.icon;
+            const getBorderColor = (color: string) => {
+              switch (color) {
+                case "red":
+                  return "border-l-red-500";
+                case "orange":
+                  return "border-l-orange-500";
+                case "blue":
+                  return "border-l-blue-500";
+                case "green":
+                  return "border-l-green-500";
+                default:
+                  return "border-l-slate-500";
+              }
+            };
+
+            const getCountBadgeColor = (color: string) => {
+              switch (color) {
+                case "red":
+                  return "bg-red-500 text-white border-0";
+                case "orange":
+                  return "bg-orange-500 text-white border-0";
+                case "blue":
+                  return "bg-blue-500 text-white border-0";
+                case "green":
+                  return "bg-green-500 text-white border-0";
+                default:
+                  return "bg-slate-500 text-white border-0";
+              }
+            };
+
             return (
               <Card
                 key={card.id}
-                className={`border hover-elevate cursor-pointer transition-all ${getColorClasses(card.color)}`}
+                className={`border-l-4 hover-elevate cursor-pointer transition-all ${getColorClasses(card.color)} ${getBorderColor(card.color)}`}
                 onClick={() => setLocation(card.route)}
                 data-testid={`signal-card-${card.id}`}
               >
@@ -246,7 +276,7 @@ export default function Dashboard() {
                       </h3>
                     </div>
                     <Badge
-                      className={`${getCountBgColor(card.color)} border-0`}
+                      className={getCountBadgeColor(card.color)}
                       data-testid={`badge-signal-count-${card.id}`}
                     >
                       {card.count}
