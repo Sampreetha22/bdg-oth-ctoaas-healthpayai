@@ -30,10 +30,22 @@ type SortDirection = "asc" | "desc";
 export default function ClaimAnomaly() {
   const [activeTab, setActiveTab] = useState("duplicate");
   const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [dupSortKey, setDupSortKey] = useState<SortKey>("riskScore");
+  const [dupSortDirection, setDupSortDirection] = useState<SortDirection>("desc");
   const [underSortKey, setUnderSortKey] = useState<SortKey>("riskScore");
   const [underSortDirection, setUnderSortDirection] = useState<SortDirection>("desc");
   const [upSortKey, setUpSortKey] = useState<SortKey>("riskScore");
   const [upSortDirection, setUpSortDirection] = useState<SortDirection>("desc");
+
+  const handleDupSort = (key: SortKey) => {
+    if (dupSortKey === key) {
+      setDupSortDirection(dupSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setDupSortKey(key);
+      const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "cptCode", "pathway"];
+      setDupSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
+    }
+  };
 
   const handleUnderSort = (key: SortKey) => {
     if (underSortKey === key) {
@@ -86,6 +98,11 @@ export default function ClaimAnomaly() {
       }
     });
   };
+
+  const sortedDuplicates = useMemo(() => 
+    sortData(duplicates?.cases || [], dupSortKey, dupSortDirection),
+    [duplicates?.cases, dupSortKey, dupSortDirection]
+  );
 
   const sortedUnderbilling = useMemo(() => 
     sortData(underbilling?.cases || [], underSortKey, underSortDirection),
@@ -180,18 +197,106 @@ export default function ClaimAnomaly() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-card z-10">
                       <TableRow>
-                        <TableHead>Claim ID</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Service Date</TableHead>
-                        <TableHead>CPT Code</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Pathway</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("claimId")}
+                            data-testid="sort-claimId"
+                          >
+                            Claim ID
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("providerName")}
+                            data-testid="sort-provider"
+                          >
+                            Provider
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("memberName")}
+                            data-testid="sort-member"
+                          >
+                            Member
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("serviceDate")}
+                            data-testid="sort-serviceDate"
+                          >
+                            Service Date
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("cptCode")}
+                            data-testid="sort-cptCode"
+                          >
+                            CPT Code
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("amount")}
+                            data-testid="sort-amount"
+                          >
+                            Amount
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("riskScore")}
+                            data-testid="sort-riskScore"
+                          >
+                            Risk
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => handleDupSort("pathway")}
+                            data-testid="sort-pathway"
+                          >
+                            Pathway
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {duplicates?.cases?.map((item: any) => (
+                      {sortedDuplicates.map((item: any) => (
                         <TableRow
                           key={item.id}
                           className="cursor-pointer hover-elevate"
