@@ -317,36 +317,38 @@ export default function Dashboard() {
               Recent Critical Alerts
             </h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {recentAlerts.slice(0, 6).map((alert: any) => (
-              <Card
-                key={alert.id}
-                className="border-slate-800 hover-elevate cursor-pointer"
-                onClick={() => {
-                  navigate("/claim-anomaly", "Claim Anomaly Detection");
-                  setLocation(`/claim-anomaly`);
-                }}
-                data-testid={`alert-card-${alert.id}`}
-              >
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge variant={alert.riskLevel === "high" ? "destructive" : "secondary"}>
-                      {alert.alertType.replace(/_/g, " ")}
-                    </Badge>
-                    <RiskScoreBadge score={alert.riskScore} size="sm" />
-                  </div>
-                  <p className="text-sm font-medium" data-testid={`text-alert-provider-${alert.id}`}>
-                    {alert.providerName}
-                  </p>
-                  <p className="text-xs text-muted-foreground" data-testid={`text-alert-message-${alert.id}`}>
-                    {alert.message}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(alert.detectedAt).toLocaleDateString()}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="max-h-[600px] overflow-y-auto">
+            <div className="grid gap-4 md:grid-cols-2 pr-2">
+              {recentAlerts.map((alert: any) => (
+                <Card
+                  key={alert.id}
+                  className="border-slate-800 hover-elevate cursor-pointer"
+                  onClick={() => {
+                    navigate("/claim-anomaly", "Claim Anomaly Detection");
+                    setLocation(`/claim-anomaly`);
+                  }}
+                  data-testid={`alert-card-${alert.id}`}
+                >
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant={alert.riskLevel === "high" ? "destructive" : "secondary"}>
+                        {alert.alertType.replace(/_/g, " ")}
+                      </Badge>
+                      <RiskScoreBadge score={alert.riskScore} size="sm" />
+                    </div>
+                    <p className="text-sm font-medium" data-testid={`text-alert-provider-${alert.id}`}>
+                      {alert.providerName}
+                    </p>
+                    <p className="text-xs text-muted-foreground" data-testid={`text-alert-message-${alert.id}`}>
+                      {alert.message}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(alert.detectedAt).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       )}
