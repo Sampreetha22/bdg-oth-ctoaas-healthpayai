@@ -304,8 +304,8 @@ function generateFraudAlerts(
       }
     });
     
-    // Detect billing intensity outliers
-    if (providerClaims.length > 500 && Math.random() < 0.3) {
+    // Detect billing intensity outliers (top ~10% of providers by volume)
+    if (providerClaims.length > 110 && Math.random() < 0.5) {
       alerts.push({
         providerId,
         alertType: "outlier_intensity",
@@ -318,8 +318,58 @@ function generateFraudAlerts(
           confidence: 0.65,
           evidence: [
             `Total claims: ${providerClaims.length}`,
-            `Peer group average: ${random(150, 250)}`,
+            `Peer group average: ${random(85, 105)}`,
             "Statistical outlier detected",
+          ],
+        },
+        status: getRandomAlertStatus(),
+      });
+    }
+    
+    // Detect code switching patterns
+    const cptCodes = new Set(providerClaims.map(c => c.cptCode));
+    if (cptCodes.size > 5 && Math.random() < 0.4) {
+      alerts.push({
+        providerId,
+        alertType: "code_switching",
+        riskLevel: "medium",
+        riskScore: random(65, 80),
+        pathway: Math.random() < 0.5 ? "operational" : "fraud",
+        aiReasoning: {
+          operationalHypothesis: "Provider diversified service offering to meet patient needs",
+          fraudHypothesis: "Frequent CPT code changes to maximize reimbursement rates",
+          confidence: 0.72,
+          evidence: [
+            `${cptCodes.size} different CPT codes used`,
+            "Pattern suggests optimization for higher-paying codes",
+            "Inconsistent with typical practice patterns",
+          ],
+        },
+        status: getRandomAlertStatus(),
+      });
+    }
+    
+    // Detect after-hours billing spikes
+    const afterHoursClaims = providerClaims.filter(c => {
+      const hour = new Date(c.serviceDate).getHours();
+      const day = new Date(c.serviceDate).getDay();
+      return hour < 7 || hour > 19 || day === 0 || day === 6;
+    });
+    if (afterHoursClaims.length > providerClaims.length * 0.3 && Math.random() < 0.35) {
+      alerts.push({
+        providerId,
+        alertType: "afterhours_spike",
+        riskLevel: "medium",
+        riskScore: random(58, 73),
+        pathway: "operational",
+        aiReasoning: {
+          operationalHypothesis: "Provider offers extended hours to accommodate working patients",
+          fraudHypothesis: "Suspicious pattern of weekend/after-hours billing inconsistent with practice type",
+          confidence: 0.68,
+          evidence: [
+            `${afterHoursClaims.length} claims (${Math.round(afterHoursClaims.length / providerClaims.length * 100)}%) outside normal business hours`,
+            "Concentration on weekends and late evenings",
+            "Pattern differs from peer group norms",
           ],
         },
         status: getRandomAlertStatus(),
