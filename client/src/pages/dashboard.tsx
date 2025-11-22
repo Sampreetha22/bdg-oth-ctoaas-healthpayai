@@ -152,7 +152,10 @@ export default function Dashboard() {
         {/* Audit Findings */}
         <Card
           className="border-orange-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
-          onClick={() => setLocation("/evv-intelligence")}
+          onClick={() => {
+            navigate("/evv-intelligence", "EVV Intelligence");
+            setLocation("/evv-intelligence");
+          }}
           data-testid="summary-card-findings"
         >
           <CardContent className="p-4 space-y-3">
@@ -175,7 +178,10 @@ export default function Dashboard() {
         {/* Active Members */}
         <Card
           className="border-blue-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
-          onClick={() => setLocation("/provider-profiling")}
+          onClick={() => {
+            navigate("/provider-profiling", "Provider Profiling");
+            setLocation("/provider-profiling");
+          }}
           data-testid="summary-card-members"
         >
           <CardContent className="p-4 space-y-3">
@@ -198,7 +204,10 @@ export default function Dashboard() {
         {/* Compliance Rate */}
         <Card
           className="border-green-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
-          onClick={() => setLocation("/benefit-utilization")}
+          onClick={() => {
+            navigate("/benefit-utilization", "Benefit Utilization");
+            setLocation("/benefit-utilization");
+          }}
           data-testid="summary-card-compliance"
         >
           <CardContent className="p-4 space-y-3">
@@ -267,7 +276,10 @@ export default function Dashboard() {
               <Card
                 key={card.id}
                 className={`border-l-4 hover-elevate cursor-pointer transition-all ${getColorClasses(card.color)} ${getBorderColor(card.color)}`}
-                onClick={() => setLocation(card.route)}
+                onClick={() => {
+                  navigate(card.route, card.title);
+                  setLocation(card.route);
+                }}
                 data-testid={`signal-card-${card.id}`}
               >
                 <CardContent className="p-4 space-y-3">
@@ -310,7 +322,10 @@ export default function Dashboard() {
               <Card
                 key={alert.id}
                 className="border-slate-800 hover-elevate cursor-pointer"
-                onClick={() => setLocation(`/claim-anomaly`)}
+                onClick={() => {
+                  navigate("/claim-anomaly", "Claim Anomaly Detection");
+                  setLocation(`/claim-anomaly`);
+                }}
                 data-testid={`alert-card-${alert.id}`}
               >
                 <CardContent className="p-4 space-y-2">
