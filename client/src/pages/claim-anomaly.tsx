@@ -6,9 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CptCodePill } from "@/components/cpt-code-pill";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
-import { Eye, FileDown } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { formatDate } from "date-fns";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -20,6 +26,7 @@ import {
 
 export default function ClaimAnomaly() {
   const [activeTab, setActiveTab] = useState("duplicate");
+  const [selectedCase, setSelectedCase] = useState<any>(null);
 
   const { data: duplicates, isLoading: dupLoading } = useQuery({
     queryKey: ["/api/claim-anomaly/duplicate-billing"],
@@ -106,56 +113,59 @@ export default function ClaimAnomaly() {
             <CardHeader>
               <CardTitle>Detected Cases</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {dupLoading ? (
-                <Skeleton className="h-64" />
+                <div className="p-6">
+                  <Skeleton className="h-64" />
+                </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Claim ID</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Service Date</TableHead>
-                      <TableHead>CPT Code</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Risk</TableHead>
-                      <TableHead>Pathway</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {duplicates?.cases?.map((item: any) => (
-                      <TableRow key={item.id} data-testid={`claim-row-${item.id}`}>
-                        <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
-                        <TableCell>{item.providerName}</TableCell>
-                        <TableCell>{item.memberName}</TableCell>
-                        <TableCell className="text-sm">
-                          {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          <CptCodePill code={item.cptCode} modifiers={item.modifiers} />
-                        </TableCell>
-                        <TableCell className="font-mono">
-                          ${Number(item.amount).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <RiskScoreBadge score={item.riskScore} size="sm" />
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
-                            {item.pathway}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" data-testid={`button-view-${item.id}`}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                <div className="max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead>Claim ID</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Service Date</TableHead>
+                        <TableHead>CPT Code</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Risk</TableHead>
+                        <TableHead>Pathway</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {duplicates?.cases?.map((item: any) => (
+                        <TableRow
+                          key={item.id}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => setSelectedCase(item)}
+                          data-testid={`claim-row-${item.id}`}
+                        >
+                          <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
+                          <TableCell>{item.providerName}</TableCell>
+                          <TableCell>{item.memberName}</TableCell>
+                          <TableCell className="text-sm">
+                            {formatDate(new Date(item.serviceDate), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <CptCodePill code={item.cptCode} modifiers={item.modifiers} />
+                          </TableCell>
+                          <TableCell className="font-mono">
+                            ${Number(item.amount).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <RiskScoreBadge score={item.riskScore} size="sm" />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={item.pathway === "fraud" ? "destructive" : "secondary"}>
+                              {item.pathway}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -211,6 +221,80 @@ export default function ClaimAnomaly() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Claim Details Dialog */}
+      <Dialog open={!!selectedCase} onOpenChange={() => setSelectedCase(null)}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-claim-details">
+          <DialogHeader>
+            <DialogTitle>Claim Details - {selectedCase?.claimId}</DialogTitle>
+          </DialogHeader>
+          {selectedCase && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Provider</p>
+                  <p className="font-semibold" data-testid="text-claim-provider">
+                    {selectedCase.providerName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Member</p>
+                  <p className="font-semibold" data-testid="text-claim-member">
+                    {selectedCase.memberName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Service Date</p>
+                  <p className="font-semibold">
+                    {formatDate(new Date(selectedCase.serviceDate), "MMMM d, yyyy")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Billed Amount</p>
+                  <p className="font-mono font-semibold text-lg">
+                    ${Number(selectedCase.amount).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">Risk Assessment</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Risk Score</p>
+                      <div className="mt-2">
+                        <RiskScoreBadge score={selectedCase.riskScore} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Analysis Pathway</p>
+                      <Badge
+                        className="mt-2"
+                        variant={selectedCase.pathway === "fraud" ? "destructive" : "secondary"}
+                      >
+                        {selectedCase.pathway}
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">Service Information</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">CPT Code</span>
+                    <CptCodePill code={selectedCase.cptCode} modifiers={selectedCase.modifiers} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
