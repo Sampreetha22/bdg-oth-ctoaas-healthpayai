@@ -136,9 +136,21 @@ function generateClaims(
     // Duplicate billing pattern - actually create duplicates
     const isDuplicate = isFraud && lastClaim && Math.random() < 0.15;
     
-    // Upcoding pattern
+    // Upcoding pattern (billed more than documented)
     const isUpcoded = isFraud && Math.random() < 0.25;
-    const actualDuration = Math.floor(isUpcoded ? cpt.duration * 0.5 : cpt.duration);
+    
+    // Underbilling pattern (documented more than billed) - 5% of claims
+    const isUnderbilled = Math.random() < 0.05;
+    
+    // Calculate actual documented duration based on patterns
+    let actualDuration: number;
+    if (isUpcoded) {
+      actualDuration = Math.floor(cpt.duration * 0.5); // Documented less than billed
+    } else if (isUnderbilled) {
+      actualDuration = Math.floor(cpt.duration * 1.5); // Documented more than billed (revenue leakage)
+    } else {
+      actualDuration = cpt.duration; // Documented matches billed
+    }
     
     // Weekend/after-hours pattern
     const isWeekend = isFraud && Math.random() < 0.15;
@@ -304,31 +316,41 @@ function generateFraudAlerts(
       }
     });
     
-    // Detect underbilling (revenue leakage - 2% of claims)
+    // Detect underbilling (revenue leakage - documented work exceeds billed)
+    let underbillingCount = 0;
+    let eligibleCount = 0;
     providerClaims.forEach(claim => {
-      if (Math.random() < 0.02 && claim.documentedDuration && claim.sessionDuration < claim.documentedDuration * 0.7) {
-        alerts.push({
-          providerId,
-          memberId: claim.memberId,
-          claimId: claim.id,
-          alertType: "underbilling",
-          riskLevel: "low",
-          riskScore: random(40, 60),
-          pathway: "operational",
-          aiReasoning: {
-            operationalHypothesis: "Billing system defaulting to lower CPT code tier",
-            fraudHypothesis: "Revenue leakage opportunity - provider eligible for higher reimbursement",
-            confidence: 0.75,
-            evidence: [
-              `Documented duration: ${claim.documentedDuration} min`,
-              `Billed CPT: ${claim.cptCode}`,
-              `Could bill for ${claim.documentedDuration >= 53 ? "90837" : "90834"} instead`,
-            ],
-          },
-          status: getRandomAlertStatus(),
-        });
+      if (claim.documentedDuration && claim.documentedDuration > claim.sessionDuration * 1.3) {
+        eligibleCount++;
+        if (Math.random() < 0.5) {
+          underbillingCount++;
+          const missedRevenue = (claim.documentedDuration - claim.sessionDuration) * 3.5;
+          alerts.push({
+            providerId,
+            memberId: claim.memberId,
+            claimId: claim.id,
+            alertType: "underbilling",
+            riskLevel: "low",
+            riskScore: random(40, 60),
+            pathway: "operational",
+            aiReasoning: {
+              operationalHypothesis: "Billing system defaulting to lower CPT code tier",
+              fraudHypothesis: "Revenue leakage opportunity - provider eligible for higher reimbursement",
+              confidence: 0.75,
+              evidence: [
+                `Documented duration: ${claim.documentedDuration} min`,
+                `Billed duration: ${claim.sessionDuration} min`,
+                `Potential revenue missed: $${Math.round(missedRevenue)}`,
+              ],
+            },
+            status: getRandomAlertStatus(),
+          });
+        }
       }
     });
+    if (eligibleCount > 0) {
+      console.log(`Provider ${providerId}: ${eligibleCount} eligible underbilling claims, created ${underbillingCount} alerts`);
+    }
     
     // Detect billing intensity outliers (top ~10% of providers by volume)
     if (providerClaims.length > 110 && Math.random() < 0.5) {

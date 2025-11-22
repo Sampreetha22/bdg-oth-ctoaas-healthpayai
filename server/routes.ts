@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, DatabaseStorage } from "./storage";
 import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { generateSyntheticData } from "./data-generator";
 import { analyzeClaim, analyzeProvider } from "./ai-agents";
 import { providers, members, claims, evvRecords, clinicalOutcomes, fraudAlerts } from "@shared/schema";
@@ -365,12 +366,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First clear existing data if using database storage
       if (storage instanceof DatabaseStorage) {
         console.log("🗑️  Clearing existing data...");
-        await db.delete(fraudAlerts);
-        await db.delete(clinicalOutcomes);
-        await db.delete(evvRecords);
-        await db.delete(claims);
-        await db.delete(members);
-        await db.delete(providers);
+        // Use TRUNCATE for faster bulk deletion without timeouts
+        await db.execute(sql`TRUNCATE TABLE fraud_alerts, clinical_outcomes, evv_records, claims, members, providers RESTART IDENTITY CASCADE`);
         console.log("✓ Existing data cleared");
       }
       
