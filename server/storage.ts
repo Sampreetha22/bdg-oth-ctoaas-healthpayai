@@ -57,6 +57,7 @@ export interface IStorage {
   createFraudAlert(alert: InsertFraudAlert): Promise<FraudAlert>;
   getFraudAlerts(limit?: number): Promise<FraudAlert[]>;
   getFraudAlertsByProvider(providerId: string): Promise<FraudAlert[]>;
+  getFraudAlertsByType(alertType: string, limit?: number): Promise<FraudAlert[]>;
   
   // Provider Stats methods
   createProviderStats(stats: InsertProviderStats): Promise<ProviderStats>;
@@ -186,14 +187,21 @@ export class DatabaseStorage implements IStorage {
 
   async getFraudAlerts(limit: number = 50): Promise<FraudAlert[]> {
     return await db.select().from(fraudAlerts)
-      .orderBy(desc(fraudAlerts.detectedAt))
+      .orderBy(desc(fraudAlerts.detectedAt), desc(fraudAlerts.id))
       .limit(limit);
   }
 
   async getFraudAlertsByProvider(providerId: string): Promise<FraudAlert[]> {
     return await db.select().from(fraudAlerts)
       .where(eq(fraudAlerts.providerId, providerId))
-      .orderBy(desc(fraudAlerts.detectedAt));
+      .orderBy(desc(fraudAlerts.detectedAt), desc(fraudAlerts.id));
+  }
+
+  async getFraudAlertsByType(alertType: string, limit: number = 1000): Promise<FraudAlert[]> {
+    return await db.select().from(fraudAlerts)
+      .where(eq(fraudAlerts.alertType, alertType))
+      .orderBy(desc(fraudAlerts.detectedAt), desc(fraudAlerts.id))
+      .limit(limit);
   }
 
   async createProviderStats(insertStats: InsertProviderStats): Promise<ProviderStats> {

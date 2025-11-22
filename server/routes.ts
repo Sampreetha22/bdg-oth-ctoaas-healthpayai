@@ -111,8 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // EVV Intelligence endpoints
   app.get("/api/evv/not-visited", async (req, res) => {
     try {
-      const alerts = await storage.getFraudAlerts(1000);
-      const evvAlerts = alerts.filter(a => a.alertType === "billed_not_visited");
+      const evvAlerts = await storage.getFraudAlertsByType("billed_not_visited");
       
       const cases = await Promise.all(
         evvAlerts.slice(0, 50).map(async (alert) => {
@@ -147,12 +146,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/evv/service-overlap", async (req, res) => {
     try {
-      const alerts = await storage.getFraudAlerts(1000);
-      const overlapAlerts = alerts.filter(a => a.alertType === "service_overlap");
+      const overlapAlerts = await storage.getFraudAlertsByType("service_overlap");
+      
+      const cases = await Promise.all(
+        overlapAlerts.slice(0, 50).map(async (alert) => {
+          const provider = alert.providerId ? await storage.getProvider(alert.providerId) : null;
+          const member = alert.memberId ? await storage.getMember(alert.memberId) : null;
+          const claim = alert.claimId ? await storage.getClaim(alert.claimId) : null;
+          
+          return {
+            id: alert.id,
+            claimId: claim?.claimId || "N/A",
+            providerName: provider?.name || "Unknown",
+            memberName: member ? `${member.firstName} ${member.lastName}` : "Unknown",
+            serviceDate: claim?.serviceDate || new Date(),
+            evvStatus: "overlap",
+            distance: 0,
+            riskScore: alert.riskScore,
+            pathway: alert.pathway,
+          };
+        })
+      );
       
       res.json({
         totalCount: overlapAlerts.length,
-        cases: [],
+        cases,
       });
     } catch (error) {
       console.error("Error fetching service overlap data:", error);
@@ -162,12 +180,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/evv/missed-visits", async (req, res) => {
     try {
-      const alerts = await storage.getFraudAlerts(1000);
-      const missedAlerts = alerts.filter(a => a.alertType === "missed_visit");
+      const missedAlerts = await storage.getFraudAlertsByType("missed_visit");
+      
+      const cases = await Promise.all(
+        missedAlerts.slice(0, 50).map(async (alert) => {
+          const provider = alert.providerId ? await storage.getProvider(alert.providerId) : null;
+          const member = alert.memberId ? await storage.getMember(alert.memberId) : null;
+          const claim = alert.claimId ? await storage.getClaim(alert.claimId) : null;
+          
+          return {
+            id: alert.id,
+            claimId: claim?.claimId || "N/A",
+            providerName: provider?.name || "Unknown",
+            memberName: member ? `${member.firstName} ${member.lastName}` : "Unknown",
+            serviceDate: claim?.serviceDate || new Date(),
+            evvStatus: "missed",
+            distance: 0,
+            riskScore: alert.riskScore,
+            pathway: alert.pathway,
+          };
+        })
+      );
       
       res.json({
         totalCount: missedAlerts.length,
-        cases: [],
+        cases,
       });
     } catch (error) {
       console.error("Error fetching missed visits data:", error);
