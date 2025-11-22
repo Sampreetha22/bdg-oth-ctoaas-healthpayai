@@ -87,7 +87,7 @@ export default function Reports() {
       <div className="grid gap-6 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Total Cases</CardTitle>
+            <CardTitle className="text-sm">Total Claims</CardTitle>
             <FileText className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -125,7 +125,7 @@ export default function Reports() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Resolved Cases</CardTitle>
+            <CardTitle className="text-sm">Resolved Claims</CardTitle>
             <FileText className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -185,7 +185,7 @@ export default function Reports() {
             <div className="p-4 border rounded-md">
               <h3 className="font-medium mb-2">Data Included</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• All detected fraud, waste, and abuse cases</li>
+                <li>• All detected fraud, waste, and abuse claims</li>
                 <li>• AI-powered risk assessments and pathway analysis</li>
                 <li>• Provider behavioral patterns and statistical outliers</li>
                 <li>• EVV validation results and GPS verification data</li>

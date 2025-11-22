@@ -93,7 +93,7 @@ export default function ClaimAnomaly() {
                 <p className="text-3xl font-mono font-semibold">
                   {duplicates?.operationalCount || 0}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">Auto-resolved cases</p>
+                <p className="text-sm text-muted-foreground mt-1">Auto-resolved claims</p>
               </CardContent>
             </Card>
             <Card>
@@ -111,7 +111,7 @@ export default function ClaimAnomaly() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Detected Cases</CardTitle>
+              <CardTitle>Detected Claims</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {dupLoading ? (
@@ -188,7 +188,7 @@ export default function ClaimAnomaly() {
                     </p>
                   </div>
                   <p className="text-center text-muted-foreground py-12">
-                    {underbilling?.cases?.length || 0} cases detected
+                    {underbilling?.cases?.length || 0} claims detected
                   </p>
                 </div>
               )}
@@ -213,7 +213,7 @@ export default function ClaimAnomaly() {
                     </p>
                   </div>
                   <p className="text-center text-muted-foreground py-12">
-                    {upcoding?.cases?.length || 0} cases under AI review
+                    {upcoding?.cases?.length || 0} claims under AI review
                   </p>
                 </div>
               )}

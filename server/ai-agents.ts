@@ -150,7 +150,7 @@ CLAIM DETAILS:
 - Session Duration: ${claim.sessionDuration || "N/A"} minutes
 - Documented Duration: ${claim.documentedDuration || "N/A"} minutes
 - Submitted Date: ${claim.submittedDate}
-- Case Notes: ${claim.caseNotes || "None provided"}
+- Claim Notes: ${claim.caseNotes || "None provided"}
 
 DETECTED ANOMALIES (Severity: ${state.severity}):
 ${state.anomalies.map((a, i) => `${i + 1}. ${a}`).join("\n")}

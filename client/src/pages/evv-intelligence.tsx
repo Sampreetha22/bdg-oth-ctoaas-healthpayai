@@ -157,7 +157,7 @@ export default function EvvIntelligence() {
                 <Skeleton className="h-64" />
               ) : (
                 <p className="text-center text-muted-foreground py-12">
-                  {overlaps?.cases?.length || 0} overlapping services detected
+                  {overlaps?.cases?.length || 0} overlapping claims detected
                 </p>
               )}
             </CardContent>
@@ -174,7 +174,7 @@ export default function EvvIntelligence() {
                 <Skeleton className="h-64" />
               ) : (
                 <p className="text-center text-muted-foreground py-12">
-                  {missed?.cases?.length || 0} missed visits without incident reports
+                  {missed?.cases?.length || 0} claims for missed visits without incident reports
                 </p>
               )}
             </CardContent>

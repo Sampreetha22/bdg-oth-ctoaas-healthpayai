@@ -49,7 +49,7 @@ export default function BenefitUtilization() {
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm">Overutilization Cases</CardTitle>
+            <CardTitle className="text-sm">Overutilization Claims</CardTitle>
             <Activity className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -68,7 +68,7 @@ export default function BenefitUtilization() {
             <p className="text-3xl font-mono font-semibold">
               {overutilization?.avgPhq9Change || 0}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">Across flagged cases</p>
+            <p className="text-sm text-muted-foreground mt-1">Across flagged claims</p>
           </CardContent>
         </Card>
         <Card>
