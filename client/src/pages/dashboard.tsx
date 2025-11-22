@@ -14,10 +14,12 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useNavigation } from "@/lib/navigation-context";
 import type { DashboardMetrics } from "@shared/schema";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const { navigate } = useNavigation();
 
   const { data: metrics, isLoading } = useQuery<DashboardMetrics>({
     queryKey: ["/api/dashboard/metrics"],
@@ -124,7 +126,10 @@ export default function Dashboard() {
         {/* Compliance Violations */}
         <Card
           className="border-red-900/30 bg-slate-950/50 hover-elevate cursor-pointer"
-          onClick={() => setLocation("/claim-anomaly")}
+          onClick={() => {
+            navigate("/claim-anomaly", "Claim Anomaly Detection");
+            setLocation("/claim-anomaly");
+          }}
           data-testid="summary-card-violations"
         >
           <CardContent className="p-4 space-y-3">
