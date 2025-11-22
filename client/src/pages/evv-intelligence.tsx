@@ -24,6 +24,10 @@ export default function EvvIntelligence() {
   const [activeTab, setActiveTab] = useState("not-visited");
   const [sortKey, setSortKey] = useState<SortKey>("riskScore");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [overlapSortKey, setOverlapSortKey] = useState<SortKey>("riskScore");
+  const [overlapSortDirection, setOverlapSortDirection] = useState<SortDirection>("desc");
+  const [missedSortKey, setMissedSortKey] = useState<SortKey>("riskScore");
+  const [missedSortDirection, setMissedSortDirection] = useState<SortDirection>("desc");
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -33,6 +37,26 @@ export default function EvvIntelligence() {
       // Default to ascending for text columns, descending for numeric/score columns
       const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "evvStatus", "pathway"];
       setSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
+    }
+  };
+
+  const handleOverlapSort = (key: SortKey) => {
+    if (overlapSortKey === key) {
+      setOverlapSortDirection(overlapSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setOverlapSortKey(key);
+      const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "evvStatus", "pathway"];
+      setOverlapSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
+    }
+  };
+
+  const handleMissedSort = (key: SortKey) => {
+    if (missedSortKey === key) {
+      setMissedSortDirection(missedSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setMissedSortKey(key);
+      const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "evvStatus", "pathway"];
+      setMissedSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
     }
   };
 
@@ -48,29 +72,40 @@ export default function EvvIntelligence() {
     queryKey: ["/api/evv/missed-visits"],
   });
 
-  const sortedCases = useMemo(() => {
-    if (!notVisited?.cases) return [];
-    
-    const sorted = [...notVisited.cases].sort((a: any, b: any) => {
-      let aVal = a[sortKey];
-      let bVal = b[sortKey];
+  const sortData = (data: any[], key: SortKey, direction: SortDirection) => {
+    if (!data) return [];
+    return [...data].sort((a: any, b: any) => {
+      let aVal = a[key];
+      let bVal = b[key];
       
       if (typeof aVal === "string" && typeof bVal === "string") {
         const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
-        return sortDirection === "asc" ? comparison : -comparison;
+        return direction === "asc" ? comparison : -comparison;
       }
       
-      // Numeric comparison
       if (aVal === bVal) return 0;
-      if (sortDirection === "asc") {
+      if (direction === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {
         return aVal < bVal ? 1 : -1;
       }
     });
-    
-    return sorted;
-  }, [notVisited?.cases, sortKey, sortDirection]);
+  };
+
+  const sortedCases = useMemo(() => 
+    sortData(notVisited?.cases || [], sortKey, sortDirection),
+    [notVisited?.cases, sortKey, sortDirection]
+  );
+
+  const sortedOverlaps = useMemo(() => 
+    sortData(overlaps?.cases || [], overlapSortKey, overlapSortDirection),
+    [overlaps?.cases, overlapSortKey, overlapSortDirection]
+  );
+
+  const sortedMissed = useMemo(() => 
+    sortData(missed?.cases || [], missedSortKey, missedSortDirection),
+    [missed?.cases, missedSortKey, missedSortDirection]
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -290,17 +325,87 @@ export default function EvvIntelligence() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-card z-10">
                       <TableRow>
-                        <TableHead>Claim ID</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Service Date</TableHead>
-                        <TableHead>EVV Status</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Pathway</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("claimId")}
+                          >
+                            Claim ID
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("providerName")}
+                          >
+                            Provider
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("memberName")}
+                          >
+                            Member
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("serviceDate")}
+                          >
+                            Service Date
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("evvStatus")}
+                          >
+                            EVV Status
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("riskScore")}
+                          >
+                            Risk
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleOverlapSort("pathway")}
+                          >
+                            Pathway
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {overlaps?.cases?.map((item: any) => (
+                      {sortedOverlaps.map((item: any) => (
                         <TableRow key={item.id} data-testid={`overlap-row-${item.id}`}>
                           <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
                           <TableCell>{item.providerName}</TableCell>
@@ -338,17 +443,87 @@ export default function EvvIntelligence() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-card z-10">
                       <TableRow>
-                        <TableHead>Claim ID</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Service Date</TableHead>
-                        <TableHead>EVV Status</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Pathway</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("claimId")}
+                          >
+                            Claim ID
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("providerName")}
+                          >
+                            Provider
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("memberName")}
+                          >
+                            Member
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("serviceDate")}
+                          >
+                            Service Date
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("evvStatus")}
+                          >
+                            EVV Status
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("riskScore")}
+                          >
+                            Risk
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleMissedSort("pathway")}
+                          >
+                            Pathway
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {missed?.cases?.map((item: any) => (
+                      {sortedMissed.map((item: any) => (
                         <TableRow key={item.id} data-testid={`missed-row-${item.id}`}>
                           <TableCell className="font-mono text-sm">{item.claimId}</TableCell>
                           <TableCell>{item.providerName}</TableCell>

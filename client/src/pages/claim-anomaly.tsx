@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CptCodePill } from "@/components/cpt-code-pill";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
-import { FileDown } from "lucide-react";
+import { FileDown, ArrowUpDown } from "lucide-react";
 import { formatDate } from "date-fns";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +24,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type SortKey = "claimId" | "providerName" | "memberName" | "serviceDate" | "cptCode" | "amount" | "expectedAmount" | "riskScore" | "pathway";
+type SortDirection = "asc" | "desc";
+
 export default function ClaimAnomaly() {
   const [activeTab, setActiveTab] = useState("duplicate");
   const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [underSortKey, setUnderSortKey] = useState<SortKey>("riskScore");
+  const [underSortDirection, setUnderSortDirection] = useState<SortDirection>("desc");
+  const [upSortKey, setUpSortKey] = useState<SortKey>("riskScore");
+  const [upSortDirection, setUpSortDirection] = useState<SortDirection>("desc");
+
+  const handleUnderSort = (key: SortKey) => {
+    if (underSortKey === key) {
+      setUnderSortDirection(underSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setUnderSortKey(key);
+      const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "cptCode", "pathway"];
+      setUnderSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
+    }
+  };
+
+  const handleUpSort = (key: SortKey) => {
+    if (upSortKey === key) {
+      setUpSortDirection(upSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setUpSortKey(key);
+      const ascendingFirstColumns: SortKey[] = ["claimId", "providerName", "memberName", "serviceDate", "cptCode", "pathway"];
+      setUpSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
+    }
+  };
 
   const { data: duplicates, isLoading: dupLoading } = useQuery({
     queryKey: ["/api/claim-anomaly/duplicate-billing"],
@@ -39,6 +66,36 @@ export default function ClaimAnomaly() {
   const { data: upcoding, isLoading: upLoading } = useQuery({
     queryKey: ["/api/claim-anomaly/upcoding"],
   });
+
+  const sortData = (data: any[], key: SortKey, direction: SortDirection) => {
+    if (!data) return [];
+    return [...data].sort((a: any, b: any) => {
+      let aVal = a[key];
+      let bVal = b[key];
+      
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+        return direction === "asc" ? comparison : -comparison;
+      }
+      
+      if (aVal === bVal) return 0;
+      if (direction === "asc") {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+  };
+
+  const sortedUnderbilling = useMemo(() => 
+    sortData(underbilling?.cases || [], underSortKey, underSortDirection),
+    [underbilling?.cases, underSortKey, underSortDirection]
+  );
+
+  const sortedUpcoding = useMemo(() => 
+    sortData(upcoding?.cases || [], upSortKey, upSortDirection),
+    [upcoding?.cases, upSortKey, upSortDirection]
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -213,19 +270,109 @@ export default function ClaimAnomaly() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-card z-10">
                       <TableRow>
-                        <TableHead>Claim ID</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Service Date</TableHead>
-                        <TableHead>CPT Code</TableHead>
-                        <TableHead>Billed</TableHead>
-                        <TableHead>Expected</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Pathway</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("claimId")}
+                          >
+                            Claim ID
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("providerName")}
+                          >
+                            Provider
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("memberName")}
+                          >
+                            Member
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("serviceDate")}
+                          >
+                            Service Date
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("cptCode")}
+                          >
+                            CPT Code
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("amount")}
+                          >
+                            Billed
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("expectedAmount")}
+                          >
+                            Expected
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("riskScore")}
+                          >
+                            Risk
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUnderSort("pathway")}
+                          >
+                            Pathway
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {underbilling?.cases?.map((item: any) => (
+                      {sortedUnderbilling.map((item: any) => (
                         <TableRow
                           key={item.id}
                           className="cursor-pointer hover-elevate"
@@ -307,19 +454,99 @@ export default function ClaimAnomaly() {
                   <Table>
                     <TableHeader className="sticky top-0 bg-card z-10">
                       <TableRow>
-                        <TableHead>Claim ID</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Service Date</TableHead>
-                        <TableHead>Billed Code</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("claimId")}
+                          >
+                            Claim ID
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("providerName")}
+                          >
+                            Provider
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("memberName")}
+                          >
+                            Member
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("serviceDate")}
+                          >
+                            Service Date
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("cptCode")}
+                          >
+                            Billed Code
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                         <TableHead>Expected Code</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Risk</TableHead>
-                        <TableHead>Pathway</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("amount")}
+                          >
+                            Amount
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("riskScore")}
+                          >
+                            Risk
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 hover-elevate"
+                            onClick={() => handleUpSort("pathway")}
+                          >
+                            Pathway
+                            <ArrowUpDown className="ml-2 h-3 w-3" />
+                          </Button>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {upcoding?.cases?.map((item: any) => (
+                      {sortedUpcoding.map((item: any) => (
                         <TableRow
                           key={item.id}
                           className="cursor-pointer hover-elevate"
