@@ -19,7 +19,17 @@ export default function Reports() {
   const [reportType, setReportType] = useState("all");
 
   const { data: reportStats, isLoading } = useQuery({
-    queryKey: ["/api/reports/stats", dateRange, reportType],
+    queryKey: ["/api/reports/stats", dateRange.from.toISOString(), dateRange.to.toISOString(), reportType],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString(),
+        reportType: reportType,
+      });
+      const response = await fetch(`/api/reports/stats?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch report stats");
+      return response.json();
+    },
   });
 
   const handleExport = (format: string) => {

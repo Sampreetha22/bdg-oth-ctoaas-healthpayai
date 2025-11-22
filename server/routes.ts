@@ -345,7 +345,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports endpoints
   app.get("/api/reports/stats", async (req, res) => {
     try {
-      const alerts = await storage.getFraudAlerts(1000);
+      // Get all fraud alerts
+      const allAlerts = await storage.getFraudAlerts(10000);
+      
+      // Parse date range from query parameters
+      let fromDate: Date | null = null;
+      let toDate: Date | null = null;
+      
+      if (req.query.from) {
+        fromDate = new Date(req.query.from as string);
+      }
+      if (req.query.to) {
+        toDate = new Date(req.query.to as string);
+      }
+      
+      // Filter alerts by date range if provided
+      let alerts = allAlerts;
+      if (fromDate && toDate) {
+        // Get claim IDs and their service dates for filtering
+        const alertsWithDates = await Promise.all(
+          allAlerts.map(async (alert) => {
+            const claim = alert.claimId ? await storage.getClaim(alert.claimId) : null;
+            return { alert, serviceDate: claim?.serviceDate };
+          })
+        );
+        
+        // Filter by date range
+        alerts = alertsWithDates
+          .filter(({ serviceDate }) => {
+            if (!serviceDate) return false;
+            const date = new Date(serviceDate);
+            return date >= fromDate && date <= toDate;
+          })
+          .map(({ alert }) => alert);
+      }
+      
+      // Filter by report type if specified
+      const reportType = req.query.reportType as string;
+      if (reportType && reportType !== "all") {
+        const typeMap: Record<string, string[]> = {
+          "claim-anomaly": ["duplicate_billing", "underbilling", "upcoding"],
+          "evv": ["evv_not_visited", "evv_overlap", "evv_missed"],
+          "provider": ["provider_outlier"],
+          "utilization": ["overutilization"],
+        };
+        
+        const allowedTypes = typeMap[reportType] || [];
+        if (allowedTypes.length > 0) {
+          alerts = alerts.filter(a => allowedTypes.includes(a.alertType));
+        }
+      }
       
       res.json({
         totalCases: alerts.length,
