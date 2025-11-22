@@ -58,6 +58,7 @@ export default function BenefitUtilization() {
       }
       
       // Numeric comparison
+      if (aVal === bVal) return 0;
       if (sortDirection === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {

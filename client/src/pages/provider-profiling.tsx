@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileDown, TrendingUp, Clock, Code, X } from "lucide-react";
-import { useState } from "react";
+import { Search, FileDown, TrendingUp, Clock, Code, X, ArrowUpDown } from "lucide-react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,9 +22,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type SortKey = "name" | "npi" | "specialty" | "totalClaims" | "avgClaimAmount" | "alertCount" | "riskScore" | "networkStatus";
+type SortDirection = "asc" | "desc";
+
 export default function ProviderProfiling() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("riskScore");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("desc");
+    }
+  };
 
   const { data: providers, isLoading } = useQuery({
     queryKey: ["/api/providers/risk-analysis"],
@@ -43,6 +57,30 @@ export default function ProviderProfiling() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.npi.includes(searchTerm)
   );
+
+  const sortedProviders = useMemo(() => {
+    if (!filteredProviders) return [];
+    
+    const sorted = [...filteredProviders].sort((a: any, b: any) => {
+      let aVal = a[sortKey];
+      let bVal = b[sortKey];
+      
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+      
+      // Numeric comparison
+      if (aVal === bVal) return 0;
+      if (sortDirection === "asc") {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+    
+    return sorted;
+  }, [filteredProviders, sortKey, sortDirection]);
 
   const selectedProvider = providers?.find((p: any) => p.id === selectedProviderId);
 
@@ -117,51 +155,141 @@ export default function ProviderProfiling() {
           {isLoading ? (
             <Skeleton className="h-96" />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>NPI</TableHead>
-                  <TableHead>Specialty</TableHead>
-                  <TableHead>Total Claims</TableHead>
-                  <TableHead>Avg Claim Amount</TableHead>
-                  <TableHead>Alerts</TableHead>
-                  <TableHead>Risk Score</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProviders?.map((provider: any) => (
-                  <TableRow
-                    key={provider.id}
-                    className="cursor-pointer hover-elevate"
-                    onClick={() => setSelectedProviderId(provider.id)}
-                    data-testid={`provider-row-${provider.id}`}
-                  >
-                    <TableCell className="font-medium">{provider.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{provider.npi}</TableCell>
-                    <TableCell className="text-sm">{provider.specialty}</TableCell>
-                    <TableCell className="font-mono">{provider.totalClaims.toLocaleString()}</TableCell>
-                    <TableCell className="font-mono">
-                      ${Number(provider.avgClaimAmount).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      {provider.alertCount > 0 && (
-                        <Badge variant="destructive">{provider.alertCount}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <RiskScoreBadge score={provider.riskScore} size="sm" />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={provider.networkStatus === "active" ? "secondary" : "destructive"}>
-                        {provider.networkStatus}
-                      </Badge>
-                    </TableCell>
+            <div className="max-h-[500px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-card z-10">
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("name")}
+                        data-testid="sort-provider"
+                      >
+                        Provider
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("npi")}
+                        data-testid="sort-npi"
+                      >
+                        NPI
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("specialty")}
+                        data-testid="sort-specialty"
+                      >
+                        Specialty
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("totalClaims")}
+                        data-testid="sort-claims"
+                      >
+                        Total Claims
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("avgClaimAmount")}
+                        data-testid="sort-avg-amount"
+                      >
+                        Avg Claim Amount
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("alertCount")}
+                        data-testid="sort-alerts"
+                      >
+                        Alerts
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("riskScore")}
+                        data-testid="sort-risk"
+                      >
+                        Risk Score
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 hover-elevate"
+                        onClick={() => handleSort("networkStatus")}
+                        data-testid="sort-status"
+                      >
+                        Status
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      </Button>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedProviders.map((provider: any) => (
+                    <TableRow
+                      key={provider.id}
+                      className="cursor-pointer hover-elevate"
+                      onClick={() => setSelectedProviderId(provider.id)}
+                      data-testid={`provider-row-${provider.id}`}
+                    >
+                      <TableCell className="font-medium">{provider.name}</TableCell>
+                      <TableCell className="font-mono text-sm">{provider.npi}</TableCell>
+                      <TableCell className="text-sm">{provider.specialty}</TableCell>
+                      <TableCell className="font-mono">{provider.totalClaims.toLocaleString()}</TableCell>
+                      <TableCell className="font-mono">
+                        ${Number(provider.avgClaimAmount).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        {provider.alertCount > 0 && (
+                          <Badge variant="destructive">{provider.alertCount}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <RiskScoreBadge score={provider.riskScore} size="sm" />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={provider.networkStatus === "active" ? "secondary" : "destructive"}>
+                          {provider.networkStatus}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
