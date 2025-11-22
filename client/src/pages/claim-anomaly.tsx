@@ -9,6 +9,7 @@ import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { FileDown, ArrowUpDown } from "lucide-react";
 import { formatDate } from "date-fns";
 import { useState, useMemo } from "react";
+import { exportToCSV } from "@/lib/exportUtils";
 import {
   Dialog,
   DialogContent,
@@ -114,6 +115,36 @@ export default function ClaimAnomaly() {
     [upcoding?.cases, upSortKey, upSortDirection]
   );
 
+  const handleExport = () => {
+    let data: any[] = [];
+    let filename = "";
+    const columns = [
+      { key: "claimId", label: "Claim ID" },
+      { key: "providerName", label: "Provider" },
+      { key: "memberName", label: "Member" },
+      { key: "serviceDate", label: "Service Date" },
+      { key: "cptCode", label: "CPT Code" },
+      { key: "amount", label: "Amount" },
+      { key: "riskScore", label: "Risk Score" },
+      { key: "pathway", label: "Pathway" },
+    ];
+
+    if (activeTab === "duplicate") {
+      data = sortedDuplicates;
+      filename = "duplicate-billing-claims";
+    } else if (activeTab === "underbilling") {
+      data = sortedUnderbilling;
+      filename = "underbilling-leakage-claims";
+      columns.splice(5, 0, { key: "expectedAmount", label: "Expected Amount" });
+    } else if (activeTab === "upcoding") {
+      data = sortedUpcoding;
+      filename = "upcoding-misclassification-claims";
+      columns.splice(5, 0, { key: "expectedAmount", label: "Expected Amount" });
+    }
+
+    exportToCSV(data, filename, columns);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -125,7 +156,7 @@ export default function ClaimAnomaly() {
             AI-powered detection of duplicate billing, underbilling, and upcoding patterns
           </p>
         </div>
-        <Button variant="outline" data-testid="button-export-claim-anomaly">
+        <Button variant="outline" onClick={handleExport} data-testid="button-export-claim-anomaly">
           <FileDown className="h-4 w-4 mr-2" />
           Export Report
         </Button>

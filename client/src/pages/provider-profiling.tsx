@@ -7,6 +7,7 @@ import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { Badge } from "@/components/ui/badge";
 import { Search, FileDown, TrendingUp, Clock, Code, X, ArrowUpDown } from "lucide-react";
 import { useState, useMemo } from "react";
+import { exportToCSV } from "@/lib/exportUtils";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +87,21 @@ export default function ProviderProfiling() {
 
   const selectedProvider = providers?.find((p: any) => p.id === selectedProviderId);
 
+  const handleExport = () => {
+    const columns = [
+      { key: "name", label: "Provider Name" },
+      { key: "npi", label: "NPI" },
+      { key: "specialty", label: "Specialty" },
+      { key: "totalClaims", label: "Total Claims" },
+      { key: "avgClaimAmount", label: "Avg Claim Amount" },
+      { key: "alertCount", label: "Alert Count" },
+      { key: "riskScore", label: "Risk Score" },
+      { key: "networkStatus", label: "Network Status" },
+    ];
+
+    exportToCSV(sortedProviders, "provider-risk-analysis", columns);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -97,7 +113,7 @@ export default function ProviderProfiling() {
             Statistical analysis of billing patterns, outlier detection, and peer group comparison
           </p>
         </div>
-        <Button variant="outline" data-testid="button-export-providers">
+        <Button variant="outline" onClick={handleExport} data-testid="button-export-providers">
           <FileDown className="h-4 w-4 mr-2" />
           Export Report
         </Button>

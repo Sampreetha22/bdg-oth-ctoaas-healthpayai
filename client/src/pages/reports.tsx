@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FileDown, CalendarIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { exportToCSV } from "@/lib/exportUtils";
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -22,7 +23,29 @@ export default function Reports() {
   });
 
   const handleExport = (format: string) => {
-    console.log(`Exporting report in ${format} format`);
+    if (format === "csv") {
+      const columns = [
+        { key: "reportType", label: "Report Type" },
+        { key: "totalCases", label: "Total Cases" },
+        { key: "totalAmount", label: "Total Amount" },
+        { key: "resolvedCases", label: "Resolved Cases" },
+        { key: "resolutionRate", label: "Resolution Rate %" },
+        { key: "recovered", label: "Recovered" },
+      ];
+      
+      const data = [{
+        reportType: reportType === "all" ? "All FWA Types" : reportType,
+        totalCases: reportStats?.totalCases || 0,
+        totalAmount: reportStats?.totalAmount || 0,
+        resolvedCases: reportStats?.resolvedCases || 0,
+        resolutionRate: reportStats?.resolutionRate || 0,
+        recovered: reportStats?.recovered || 0,
+      }];
+      
+      exportToCSV(data, `fwa-compliance-report`, columns);
+    } else {
+      console.log(`PDF export not yet implemented`);
+    }
   };
 
   return (

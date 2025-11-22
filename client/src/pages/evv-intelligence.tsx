@@ -8,6 +8,7 @@ import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { MapPin, FileDown, Calendar, ArrowUpDown } from "lucide-react";
 import { formatDate } from "date-fns";
 import { useState, useMemo } from "react";
+import { exportToCSV } from "@/lib/exportUtils";
 import {
   Table,
   TableBody,
@@ -107,6 +108,33 @@ export default function EvvIntelligence() {
     [missed?.cases, missedSortKey, missedSortDirection]
   );
 
+  const handleExport = () => {
+    let data: any[] = [];
+    let filename = "";
+    const columns = [
+      { key: "claimId", label: "Claim ID" },
+      { key: "providerName", label: "Provider" },
+      { key: "memberName", label: "Member" },
+      { key: "serviceDate", label: "Service Date" },
+      { key: "evvStatus", label: "EVV Status" },
+      { key: "distance", label: "Distance (mi)" },
+      { key: "riskScore", label: "Risk Score" },
+    ];
+
+    if (activeTab === "not-visited") {
+      data = sortedCases;
+      filename = "billed-not-visited-claims";
+    } else if (activeTab === "overlaps") {
+      data = sortedOverlaps;
+      filename = "service-overlap-claims";
+    } else if (activeTab === "missed") {
+      data = sortedMissed;
+      filename = "missed-visits-claims";
+    }
+
+    exportToCSV(data, filename, columns);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -118,7 +146,7 @@ export default function EvvIntelligence() {
             Electronic Visit Verification analysis with GPS validation and incident correlation
           </p>
         </div>
-        <Button variant="outline" data-testid="button-export-evv">
+        <Button variant="outline" onClick={handleExport} data-testid="button-export-evv">
           <FileDown className="h-4 w-4 mr-2" />
           Export Report
         </Button>

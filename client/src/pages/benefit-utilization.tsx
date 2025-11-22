@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { RiskScoreBadge } from "@/components/risk-score-badge";
 import { Activity, FileDown, TrendingDown, ArrowUpDown } from "lucide-react";
+import { exportToCSV } from "@/lib/exportUtils";
 import {
   Table,
   TableBody,
@@ -71,6 +72,21 @@ export default function BenefitUtilization() {
     return sorted;
   }, [overutilization?.cases, sortKey, sortDirection]);
 
+  const handleExport = () => {
+    const columns = [
+      { key: "memberName", label: "Member Name" },
+      { key: "providerName", label: "Provider Name" },
+      { key: "sessionCount", label: "Session Count" },
+      { key: "initialPhq9", label: "Initial PHQ-9" },
+      { key: "currentPhq9", label: "Current PHQ-9" },
+      { key: "change", label: "Change" },
+      { key: "riskScore", label: "Risk Score" },
+      { key: "pathway", label: "Pathway" },
+    ];
+
+    exportToCSV(sortedCases, "benefit-utilization-overuse", columns);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -82,7 +98,7 @@ export default function BenefitUtilization() {
             Analysis of service volume effectiveness and clinical outcome correlation
           </p>
         </div>
-        <Button variant="outline" data-testid="button-export-utilization">
+        <Button variant="outline" onClick={handleExport} data-testid="button-export-utilization">
           <FileDown className="h-4 w-4 mr-2" />
           Export Report
         </Button>
