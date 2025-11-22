@@ -41,7 +41,9 @@ export default function BenefitUtilization() {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
-      setSortDirection("desc");
+      // Default to ascending for text columns, descending for numeric/score columns
+      const ascendingFirstColumns: SortKey[] = ["memberName", "providerName", "pathway"];
+      setSortDirection(ascendingFirstColumns.includes(key) ? "asc" : "desc");
     }
   };
 
