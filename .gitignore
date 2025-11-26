@@ -1,6 +1,49 @@
+# Dependencies
 node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+bun-debug.log*
+*.log
+
+# Environment / local overrides
+.env
+.env.*
+!.env.example
+.envrc
+.direnv
+.local
+*.local
+
+# Build outputs
 dist
-.DS_Store
 server/public
+.vite
+client/.vite
+build
+coverage
+*.tsbuildinfo
 vite.config.ts.*
+
+# Testing / coverage
+.nyc_output
+.coverage
+.eslintcache
+.stylelintcache
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode/*
+*.code-workspace
+
+# Archives
 *.tar.gz
+*.tgz
+
+# Tool caches
+.cache
+.parcel-cache
+.turbo
