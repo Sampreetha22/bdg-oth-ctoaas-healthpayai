@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(undefined);
       localStorage.setItem(AUTH_STORAGE_KEY, "true");
     } else {
-      setError("Invalid credentials. Use admin / admin123.");
+      setError("Invalid credentials.");
       setIsAuthenticated(false);
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }

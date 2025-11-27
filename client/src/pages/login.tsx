@@ -26,7 +26,7 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-lg border-slate-200">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
-          <CardDescription>Use admin / admin123 to access the dashboard.</CardDescription>
+          <CardDescription>Sign in to access the dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
