@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { type Server } from "node:http";
 
 import { nanoid } from "nanoid";
@@ -34,10 +35,11 @@ export async function setupVite(app: Express, server: Server) {
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+    const dirname = path.dirname(fileURLToPath(import.meta.url));
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        dirname,
         "..",
         "client",
         "index.html",
