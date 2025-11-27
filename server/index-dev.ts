@@ -9,6 +9,7 @@ import { createServer as createViteServer, createLogger } from "vite";
 
 import viteConfig from "../vite.config";
 import runApp from "./app";
+import { normalizeBasePath } from "./base-path";
 
 export async function setupVite(app: Express, server: Server) {
   const viteLogger = createLogger();
@@ -32,9 +33,10 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
+  const basePath = normalizeBasePath(process.env.BASE_PATH);
+  app.use(basePath, vite.middlewares);
+  app.use(`${basePath}*`, async (req, res, next) => {
+    const url = req.originalUrl.replace(basePath, "/");
     const dirname = path.dirname(fileURLToPath(import.meta.url));
 
     try {

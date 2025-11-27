@@ -7,6 +7,7 @@ import express, {
   NextFunction,
 } from "express";
 
+import { normalizeBasePath } from "./base-path";
 import { registerRoutes } from "./routes";
 
 export function log(message: string, source = "express") {
@@ -67,7 +68,8 @@ app.use((req, res, next) => {
 export default async function runApp(
   setup: (app: Express, server: Server) => Promise<void>,
 ) {
-  const server = await registerRoutes(app);
+  const basePath = normalizeBasePath(process.env.BASE_PATH);
+  const server = await registerRoutes(app, basePath);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -91,6 +93,6 @@ export default async function runApp(
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on port ${port} with base path ${basePath}`);
   });
 }

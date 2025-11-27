@@ -6,8 +6,14 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { defineConfig } from "vite";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+const rawBasePath = process.env.BASE_PATH ?? "/";
+const basePath =
+  rawBasePath === "/"
+    ? "/"
+    : `/${rawBasePath.replace(/^\/+|\/+$/g, "")}/`;
 
 export default defineConfig({
+  base: basePath,
   plugins: [
     react(),
     runtimeErrorOverlay(),

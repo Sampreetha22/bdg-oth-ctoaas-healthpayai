@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, DatabaseStorage } from "./storage";
 import { db } from "./db";
@@ -7,9 +7,10 @@ import { generateSyntheticData } from "./data-generator";
 import { analyzeClaim, analyzeProvider } from "./ai-agents";
 import { providers, members, claims, evvRecords, clinicalOutcomes, fraudAlerts } from "@shared/schema";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, basePath = "/"): Promise<Server> {
+  const router = basePath === "/" ? app : express.Router();
   // Dashboard endpoints
-  app.get("/api/dashboard/metrics", async (req, res) => {
+  router.get("/api/dashboard/metrics", async (req, res) => {
     try {
       const metrics = await storage.getDashboardMetrics();
       res.json(metrics);
@@ -19,7 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/recent-alerts", async (req, res) => {
+  router.get("/api/dashboard/recent-alerts", async (req, res) => {
     try {
       const alerts = await storage.getFraudAlerts(10);
       const alertsWithProviders = await Promise.all(
@@ -40,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Claim Anomaly Detection endpoints
-  app.get("/api/claim-anomaly/duplicate-billing", async (req, res) => {
+  router.get("/api/claim-anomaly/duplicate-billing", async (req, res) => {
     try {
       const alerts = await storage.getFraudAlerts(1000);
       const duplicateAlerts = alerts.filter(a => a.alertType === "duplicate_billing");
@@ -79,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/claim-anomaly/underbilling", async (req, res) => {
+  router.get("/api/claim-anomaly/underbilling", async (req, res) => {
     try {
       const underbildingAlerts = await storage.getFraudAlertsByType("underbilling");
       
@@ -116,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/claim-anomaly/upcoding", async (req, res) => {
+  router.get("/api/claim-anomaly/upcoding", async (req, res) => {
     try {
       const upcodingAlerts = await storage.getFraudAlertsByType("upcoding");
       
@@ -154,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // EVV Intelligence endpoints
-  app.get("/api/evv/not-visited", async (req, res) => {
+  router.get("/api/evv/not-visited", async (req, res) => {
     try {
       const evvAlerts = await storage.getFraudAlertsByType("billed_not_visited");
       
@@ -189,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/evv/service-overlap", async (req, res) => {
+  router.get("/api/evv/service-overlap", async (req, res) => {
     try {
       const overlapAlerts = await storage.getFraudAlertsByType("service_overlap");
       
@@ -223,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/evv/missed-visits", async (req, res) => {
+  router.get("/api/evv/missed-visits", async (req, res) => {
     try {
       const missedAlerts = await storage.getFraudAlertsByType("missed_visit");
       
@@ -258,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Provider Profiling endpoints
-  app.get("/api/providers/risk-analysis", async (req, res) => {
+  router.get("/api/providers/risk-analysis", async (req, res) => {
     try {
       const providers = await storage.getProvidersWithStats();
       res.json(providers);
@@ -268,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/providers/outliers", async (req, res) => {
+  router.get("/api/providers/outliers", async (req, res) => {
     try {
       const alerts = await storage.getFraudAlerts(1000);
       
@@ -283,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/provider/:id", async (req, res) => {
+  router.get("/api/provider/:id", async (req, res) => {
     try {
       const provider = await storage.getProvider(req.params.id);
       if (!provider) {
@@ -307,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Benefit Utilization endpoints
-  app.get("/api/benefit-utilization/overutilization", async (req, res) => {
+  router.get("/api/benefit-utilization/overutilization", async (req, res) => {
     try {
       const overutilizationAlerts = await storage.getFraudAlertsByType("overutilization");
       
@@ -343,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reports endpoints
-  app.get("/api/reports/stats", async (req, res) => {
+  router.get("/api/reports/stats", async (req, res) => {
     try {
       // Get all fraud alerts
       const allAlerts = await storage.getFraudAlerts(10000);
@@ -410,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data generation endpoint (for initial setup)
-  app.post("/api/admin/generate-data", async (req, res) => {
+  router.post("/api/admin/generate-data", async (req, res) => {
     try {
       // First clear existing data if using database storage
       if (storage instanceof DatabaseStorage) {
@@ -433,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Analysis endpoints
-  app.post("/api/ai/analyze-claim", async (req, res) => {
+  router.post("/api/ai/analyze-claim", async (req, res) => {
     try {
       const { claimId } = req.body;
       const claim = await storage.getClaim(claimId);
@@ -450,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai/analyze-provider", async (req, res) => {
+  router.post("/api/ai/analyze-provider", async (req, res) => {
     try {
       const { providerId } = req.body;
       const provider = await storage.getProvider(providerId);
@@ -467,6 +468,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to analyze provider" });
     }
   });
+
+  if (router !== app) {
+    app.use(basePath, router);
+  }
 
   const httpServer = createServer(app);
 
