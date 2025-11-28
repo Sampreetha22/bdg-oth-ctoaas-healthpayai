@@ -615,3 +615,20 @@ export async function generateSyntheticData() {
     throw error;
   }
 }
+
+// Allow running directly: `npx tsx server/data-generator.ts`
+const scriptPath = process.argv[1] || "";
+const isDirectRun =
+  scriptPath.endsWith("data-generator.ts") || scriptPath.endsWith("data-generator.js");
+
+if (isDirectRun) {
+  generateSyntheticData()
+    .then(() => {
+      console.log("✅ Done.");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
